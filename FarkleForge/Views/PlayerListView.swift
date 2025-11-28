@@ -58,6 +58,17 @@ struct PlayerListView: View {
             } message: {
                 Text("Enter the player's name")
             }
+            .onChange(of: showingAddPlayer) { oldValue, newValue in
+                if newValue {
+                    // Defer focus to avoid blocking initial view rendering
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        isTextFieldFocused = true
+                    }
+                } else {
+                    newPlayerName = ""
+                    isTextFieldFocused = false
+                }
+            }
         }
     }
     

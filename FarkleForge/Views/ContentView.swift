@@ -17,7 +17,7 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             mainContent
-                .navigationTitle("Farkle Scorer")
+                .navigationTitle("Farkle Forge")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     toolbarContent

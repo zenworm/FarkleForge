@@ -18,6 +18,10 @@ class GameState {
     var hasAdvancedSinceFinalRound: Bool = false
     var winner: Player? = nil
     
+    // Cache for leader to avoid recalculating on every access
+    private var _cachedLeader: Player? = nil
+    private var _leaderCacheValid: Bool = false
+    
     var currentPlayer: Player? {
         guard !players.isEmpty, currentTurnIndex < players.count else {
             return nil
@@ -26,11 +30,20 @@ class GameState {
     }
     
     var leader: Player? {
-        players.max(by: { $0.score < $1.score })
+        if !_leaderCacheValid || _cachedLeader == nil {
+            _cachedLeader = players.max(by: { $0.score < $1.score })
+            _leaderCacheValid = true
+        }
+        return _cachedLeader
     }
     
     var leaderScore: Int {
         leader?.score ?? 0
+    }
+    
+    private func invalidateLeaderCache() {
+        _leaderCacheValid = false
+        _cachedLeader = nil
     }
     
     init() {
@@ -40,6 +53,7 @@ class GameState {
     func addPlayer(name: String) {
         let newPlayer = Player(name: name)
         players.append(newPlayer)
+        invalidateLeaderCache()
     }
     
     func removePlayer(at offsets: IndexSet) {
@@ -51,6 +65,7 @@ class GameState {
         }
         
         players.remove(atOffsets: offsets)
+        invalidateLeaderCache()
         
         // Reset turn index if no players left
         if players.isEmpty {
@@ -74,6 +89,9 @@ class GameState {
             finalRoundStartedAtTurnIndex = currentTurnIndex
             hasAdvancedSinceFinalRound = false
         }
+        
+        // Invalidate leader cache since score changed
+        invalidateLeaderCache()
         
         // Check for winner (but only if we've advanced at least once since final round started)
         // This ensures everyone gets a chance to beat the score
@@ -136,6 +154,7 @@ class GameState {
         finalRoundStartedAtTurnIndex = nil
         hasAdvancedSinceFinalRound = false
         winner = nil
+        invalidateLeaderCache()
     }
 }
 
