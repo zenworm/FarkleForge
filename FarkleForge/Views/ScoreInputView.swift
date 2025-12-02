@@ -57,11 +57,11 @@ struct ScoreInputView: View {
                 }
                 
                 CalculatorButton(
-                    title: "50",
+                    title: "00",
                     backgroundColor: .blue.opacity(0.2),
                     foregroundColor: .blue
                 ) {
-                    appendShortcut("50")
+                    appendShortcut("00")
                 }
                 
                 CalculatorButton(title: "0") {
@@ -69,11 +69,11 @@ struct ScoreInputView: View {
                 }
                 
                 CalculatorButton(
-                    title: "00",
+                    title: "50",
                     backgroundColor: .blue.opacity(0.2),
                     foregroundColor: .blue
                 ) {
-                    appendShortcut("00")
+                    appendShortcut("50")
                 }
             }
             
