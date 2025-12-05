@@ -47,13 +47,15 @@ class GameState {
     }
     
     init() {
-        // Start with empty player list
+        // Load saved players on initialization
+        self.players = PlayerPersistence.load()
     }
     
     func addPlayer(name: String) {
         let newPlayer = Player(name: name)
         players.append(newPlayer)
         invalidateLeaderCache()
+        PlayerPersistence.save(players)
     }
     
     func removePlayer(at offsets: IndexSet) {
@@ -73,6 +75,8 @@ class GameState {
         } else if currentTurnIndex >= players.count {
             currentTurnIndex = 0
         }
+        
+        PlayerPersistence.save(players)
     }
     
     func addScore(_ points: Int, to playerId: UUID) {

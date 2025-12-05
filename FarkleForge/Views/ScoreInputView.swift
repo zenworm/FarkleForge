@@ -25,7 +25,7 @@ struct ScoreInputView: View {
                 // Reset button on the left (only shown when there's input)
                 if !currentInput.isEmpty {
                     Button(action: clear) {
-                        Image(systemName: "arrow.counterclockwise")
+                        Image(systemName: "xmark")
                             .font(.title2)
                             .foregroundColor(.red)
                             .padding(.horizontal, 16)
@@ -37,7 +37,7 @@ struct ScoreInputView: View {
                 
                 // Numbers on the right
                 Text(currentInput.isEmpty ? "" : currentInput)
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
                     .foregroundColor(.primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
