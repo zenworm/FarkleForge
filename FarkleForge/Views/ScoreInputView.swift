@@ -36,7 +36,7 @@ struct ScoreInputView: View {
                 Spacer()
                 
                 // Numbers on the right
-                Text(currentInput.isEmpty ? "0" : currentInput)
+                Text(currentInput.isEmpty ? "" : currentInput)
                     .font(.system(size: 48, weight: .bold, design: .rounded))
                     .foregroundColor(.primary)
                     .lineLimit(1)
