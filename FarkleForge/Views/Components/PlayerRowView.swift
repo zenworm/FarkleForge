@@ -18,36 +18,60 @@ struct PlayerRowView: View {
         return leaderScore - player.score + 1
     }
     
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(player.name)
-                    .font(.title2)
-                    .fontWeight(isCurrentTurn ? .bold : .semibold)
-                
-                Spacer()
-                
-                Text("\(player.score)")
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .foregroundColor(isCurrentTurn ? .green : .primary)
-            }
-            
-            if let pointsNeeded = pointsNeeded, isCurrentTurn {
-                Text("Need \(pointsNeeded) points to win")
-                    .font(.subheadline)
-                    .foregroundColor(.orange)
-                    .fontWeight(.semibold)
-            }
+    var progress: Double {
+        min(Double(player.score) / 10000.0, 1.0)
+    }
+    
+    var progressBarColor: Color {
+        if isCurrentTurn {
+            return Color.green.opacity(0.25)
+        } else {
+            return Color.gray.opacity(0.15)
         }
-        .padding()
-        .background(
+    }
+    
+    var body: some View {
+        ZStack(alignment: .leading) {
+            // Background container
             RoundedRectangle(cornerRadius: 4)
                 .fill(isCurrentTurn ? Color.green.opacity(0.1) : Color.gray.opacity(0.05))
-        )
+            
+            // Progress bar (full bleed on left, top, bottom)
+            GeometryReader { geometry in
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(progressBarColor)
+                    .frame(width: geometry.size.width * progress)
+                    .frame(maxHeight: .infinity, alignment: .leading)
+            }
+            
+            // Content
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(player.name)
+                        .font(.title2)
+                        .fontWeight(isCurrentTurn ? .bold : .semibold)
+                    
+                    Spacer()
+                    
+                    Text("\(player.score)")
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundColor(isCurrentTurn ? .green : .primary)
+                }
+                
+                if let pointsNeeded = pointsNeeded, isCurrentTurn {
+                    Text("Need \(pointsNeeded) points to win")
+                        .font(.subheadline)
+                        .foregroundColor(.orange)
+                        .fontWeight(.semibold)
+                }
+            }
+            .padding()
+        }
         .overlay(
             RoundedRectangle(cornerRadius: 4)
                 .stroke(isCurrentTurn ? Color.green : Color.clear, lineWidth: 2)
         )
+        .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 }
 
