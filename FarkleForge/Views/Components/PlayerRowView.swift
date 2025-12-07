@@ -24,9 +24,9 @@ struct PlayerRowView: View {
     
     var progressBarColor: Color {
         if isCurrentTurn {
-            return Color.green.opacity(0.25)
+            return Color(red: 255/255.0, green: 255/255.0, blue: 255/255.0).opacity(0.3) // #ffffff at 30%
         } else {
-            return Color.gray.opacity(0.15)
+            return Color(red: 159/255.0, green: 255/255.0, blue: 161/255.0).opacity(0.12) // #9FFFA1 at 12%
         }
     }
     
@@ -34,7 +34,7 @@ struct PlayerRowView: View {
         ZStack(alignment: .leading) {
             // Background container
             RoundedRectangle(cornerRadius: 4)
-                .fill(isCurrentTurn ? Color.green.opacity(0.1) : Color.gray.opacity(0.05))
+                .fill(isCurrentTurn ? Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0) : Color.clear) // #60C946 or transparent
             
             // Progress bar (full bleed on left, top, bottom)
             GeometryReader { geometry in
@@ -49,13 +49,14 @@ struct PlayerRowView: View {
                 HStack {
                     Text(player.name)
                         .font(.title2)
-                        .fontWeight(isCurrentTurn ? .bold : .semibold)
+                        .fontWeight(.bold)
+                        .foregroundColor(isCurrentTurn ? Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0) : Color(red: 145/255.0, green: 218/255.0, blue: 127/255.0))
                     
                     Spacer()
                     
                     Text("\(player.score)")
                         .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundColor(isCurrentTurn ? .green : .primary)
+                        .foregroundColor(isCurrentTurn ? Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0) : Color(red: 145/255.0, green: 218/255.0, blue: 127/255.0))
                 }
                 
                 if let pointsNeeded = pointsNeeded, isCurrentTurn {
@@ -69,7 +70,7 @@ struct PlayerRowView: View {
         }
         .overlay(
             RoundedRectangle(cornerRadius: 4)
-                .stroke(isCurrentTurn ? Color.green : Color.clear, lineWidth: 2)
+                .stroke(isCurrentTurn ? Color(red: 188/255.0, green: 249/255.0, blue: 172/255.0).opacity(0.5) : Color(red: 145/255.0, green: 218/255.0, blue: 127/255.0).opacity(0.3), lineWidth: 2)
         )
         .clipShape(RoundedRectangle(cornerRadius: 4))
     }

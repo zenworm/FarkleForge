@@ -54,6 +54,7 @@ struct ContentView: View {
                 gameInProgressView
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private var emptyStateView: some View {
@@ -99,6 +100,19 @@ struct ContentView: View {
                     }
                     .padding()
                 }
+                .background(
+                    ZStack {
+                        Image("BackgroundImage")
+                            .resizable()
+                            .scaledToFill()
+                            .ignoresSafeArea(edges: .top)
+                        
+                        // Color overlay to tint the background
+                        Color(red: 40/255.0, green: 59/255.0, blue: 36/255.0)
+                            .opacity(0.95)
+                            .ignoresSafeArea(edges: .top)
+                    }
+                )
                 .onChange(of: gameState.currentTurnIndex) { oldValue, newValue in
                     if let currentPlayer = gameState.currentPlayer {
                         withAnimation(.easeInOut(duration: 0.3)) {

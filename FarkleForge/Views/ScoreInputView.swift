@@ -12,6 +12,9 @@ struct ScoreInputView: View {
     let onSubmit: (Int) -> Void
     let onFarkle: () -> Void
     
+    // Dark green background color #1B2918
+    private let containerColor = Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0)
+    
     private let columns = [
         GridItem(.flexible()),
         GridItem(.flexible()),
@@ -38,40 +41,44 @@ struct ScoreInputView: View {
                 // Numbers on the right
                 Text(currentInput.isEmpty ? "" : currentInput)
                     .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.white)
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
                     .padding(.horizontal)
             }
             .frame(height: 80)
-            .background(Color.gray.opacity(0.1))
+            .background(containerColor)
             .cornerRadius(12)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentInput.isEmpty)
             
             // Number pad
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(["7", "8", "9", "4", "5", "6", "1", "2", "3"], id: \.self) { number in
-                    CalculatorButton(title: number) {
+                    CalculatorButton(
+                        title: number,
+                        foregroundColor: .white
+                    ) {
                         appendNumber(number)
                     }
                 }
                 
                 CalculatorButton(
                     title: "00",
-                    backgroundColor: .blue.opacity(0.2),
-                    foregroundColor: .blue
+                    foregroundColor: .blue.opacity(0.7)
                 ) {
                     appendShortcut("00")
                 }
                 
-                CalculatorButton(title: "0") {
+                CalculatorButton(
+                    title: "0",
+                    foregroundColor: .white
+                ) {
                     appendNumber("0")
                 }
                 
                 CalculatorButton(
                     title: "50",
-                    backgroundColor: .blue.opacity(0.2),
-                    foregroundColor: .blue
+                    foregroundColor: .blue.opacity(0.7)
                 ) {
                     appendShortcut("50")
                 }
@@ -85,9 +92,13 @@ struct ScoreInputView: View {
                         .fontWeight(.bold)
                         .frame(maxWidth: .infinity)
                         .frame(height: 60)
-                        .background(Color.red)
-                        .foregroundColor(.white)
-                        .cornerRadius(4)
+                        .background(containerColor)
+                        .foregroundColor(.red)
+                        .cornerRadius(3)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 3)
+                            .stroke(.red, lineWidth: 1)
+                        )
                 }
                 
                 Button(action: submitScore) {
@@ -96,14 +107,19 @@ struct ScoreInputView: View {
                         .fontWeight(.bold)
                         .frame(maxWidth: .infinity)
                         .frame(height: 60)
-                        .background(currentInput.isEmpty ? Color.gray : Color.green)
-                        .foregroundColor(.white)
-                        .cornerRadius(4)
+                        .background(containerColor)
+                        .foregroundColor(currentInput.isEmpty ? .gray : .green)
+                        .cornerRadius(3)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 3)
+                            .stroke(.green, lineWidth: 1)
+                        )
                 }
                 .disabled(currentInput.isEmpty)
             }
         }
         .padding()
+        .background(containerColor)
     }
     
     private func appendNumber(_ number: String) {
