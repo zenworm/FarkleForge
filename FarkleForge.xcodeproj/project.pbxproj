@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -32,8 +32,13 @@
 		FA0014A /* CalculatorButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculatorButton.swift; sourceTree = "<group>"; };
 		FA0015A /* CelebrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CelebrationView.swift; sourceTree = "<group>"; };
 		FA0016A /* PlayerPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerPersistence.swift; sourceTree = "<group>"; };
+		FA0017A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FA9999 /* FarkleForge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FarkleForge.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		67B4A47F2EF0F3E700B2919C /* Fonts */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Fonts; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		FA9996 /* Frameworks */ = {
@@ -88,7 +93,9 @@
 		FA9991 /* FarkleForge */ = {
 			isa = PBXGroup;
 			children = (
+				67B4A47F2EF0F3E700B2919C /* Fonts */,
 				FA0000 /* FarkleScoreTrackerApp.swift */,
+				FA0017A /* Info.plist */,
 				FA0008 /* Models */,
 				FA0007 /* Views */,
 				FA0004 /* Assets.xcassets */,
@@ -118,6 +125,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				67B4A47F2EF0F3E700B2919C /* Fonts */,
 			);
 			name = FarkleForge;
 			productName = FarkleScoreTracker;
@@ -322,8 +332,9 @@
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = EQUJPV6RFL;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Farkle Forge";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FarkleForge/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "What The Farkle";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -356,8 +367,9 @@
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = EQUJPV6RFL;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Farkle Forge";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FarkleForge/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "What The Farkle";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

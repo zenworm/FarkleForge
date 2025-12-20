@@ -16,6 +16,7 @@ struct CalculatorButton: View {
     private let buttonBackgroundColor = Color(red: 23/255.0, green: 32/255.0, blue: 21/255.0) // #172015
     private let borderColor = Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0).opacity(0.25) // #60C946 at 25%
     private let shadowColor = Color(red: 23/255.0, green: 32/255.0, blue: 21/255.0).opacity(0.6) // #172015 at 60%
+    private let textColor = Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0) // #60C946
     
     init(
         title: String,
@@ -30,11 +31,10 @@ struct CalculatorButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.title2)
-                .fontWeight(.bold)
+                .font(.custom("Daydream", size: 30))
+                .foregroundColor(textColor)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(buttonBackgroundColor)
-                .foregroundColor(foregroundColor)
                 .cornerRadius(3)
                 .overlay(
                     RoundedRectangle(cornerRadius: 3)

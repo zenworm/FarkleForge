@@ -14,6 +14,8 @@ struct ScoreInputView: View {
     
     // Dark green background color #1B2918
     private let containerColor = Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0)
+    private let farkleColor = Color(red: 255/255.0, green: 80/255.0, blue: 80/255.0) // #FF5050
+    private let bankColor = Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0) // #60C946
     
     private let columns = [
         GridItem(.flexible()),
@@ -40,13 +42,13 @@ struct ScoreInputView: View {
                 
                 // Numbers on the right
                 Text(currentInput.isEmpty ? "" : currentInput)
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .font(.custom("Daydream", size: 32))
+                    .foregroundColor(bankColor)
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
                     .padding(.horizontal)
             }
-            .frame(height: 80)
+            .frame(height: 72)
             .background(containerColor)
             .cornerRadius(12)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentInput.isEmpty)
@@ -88,31 +90,29 @@ struct ScoreInputView: View {
             HStack(spacing: 12) {
                 Button(action: farkle) {
                     Text("Farkle")
-                        .font(.title2)
-                        .fontWeight(.bold)
+                        .font(.custom("Daydream", size: 20))
                         .frame(maxWidth: .infinity)
                         .frame(height: 60)
                         .background(containerColor)
-                        .foregroundColor(.red)
+                        .foregroundColor(farkleColor)
                         .cornerRadius(3)
                         .overlay(
                             RoundedRectangle(cornerRadius: 3)
-                            .stroke(.red, lineWidth: 1)
+                            .stroke(farkleColor, lineWidth: 2)
                         )
                 }
                 
                 Button(action: submitScore) {
                     Text("Bank")
-                        .font(.title2)
-                        .fontWeight(.bold)
+                        .font(.custom("Daydream", size: 20))
                         .frame(maxWidth: .infinity)
                         .frame(height: 60)
                         .background(containerColor)
-                        .foregroundColor(currentInput.isEmpty ? .gray : .green)
+                        .foregroundColor(currentInput.isEmpty ? .gray : bankColor)
                         .cornerRadius(3)
                         .overlay(
                             RoundedRectangle(cornerRadius: 3)
-                            .stroke(.green, lineWidth: 1)
+                            .stroke(currentInput.isEmpty ? .gray : bankColor, lineWidth: 2)
                         )
                 }
                 .disabled(currentInput.isEmpty)

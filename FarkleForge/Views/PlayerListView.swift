@@ -17,6 +17,20 @@ struct PlayerListView: View {
     var body: some View {
         NavigationStack {
             List {
+                if gameState.players.isEmpty {
+                    Section("Target Score") {
+                        Picker("Target Score", selection: Binding(
+                            get: { gameState.targetScore },
+                            set: { gameState.targetScore = $0 }
+                        )) {
+                            Text("2,500").tag(2500)
+                            Text("5,000").tag(5000)
+                            Text("10,000").tag(10000)
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                }
+                
                 Section {
                     ForEach(gameState.players) { player in
                         HStack {

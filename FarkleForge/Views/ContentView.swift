@@ -17,7 +17,7 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             mainContent
-                .navigationTitle("Farkle Forge")
+                .navigationTitle("What The Farkle")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     toolbarContent
@@ -71,8 +71,8 @@ struct ContentView: View {
                 .foregroundColor(.secondary)
             
             Button(action: { showingPlayerList = true }) {
-                Label("Add Players", systemImage: "person.badge.plus")
-                    .font(.headline)
+                Text("Start game")
+                    .font(.custom("Daydream", size: 20))
                     .padding()
                     .background(Color.blue)
                     .foregroundColor(.white)
@@ -87,13 +87,16 @@ struct ContentView: View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(spacing: 16) {
-                        ForEach(gameState.players) { player in
+                    VStack(spacing: 0) {
+                        ForEach(Array(gameState.players.enumerated()), id: \.element.id) { index, player in
                             PlayerRowView(
                                 player: player,
                                 isCurrentTurn: player.id == gameState.currentPlayer?.id,
                                 isFinalRound: gameState.isFinalRound,
-                                leaderScore: gameState.leaderScore
+                                leaderScore: gameState.leaderScore,
+                                targetScore: gameState.targetScore,
+                                isFirst: index == 0,
+                                isLast: index == gameState.players.count - 1
                             )
                             .id(player.id)
                         }
@@ -135,8 +138,8 @@ struct ContentView: View {
             
             ScoreInputView(currentInput: $currentInput) { score in
                 if let currentPlayer = gameState.currentPlayer {
-                    gameState.addScore(score, to: currentPlayer.id)
-                    gameState.advanceTurn()
+                    gameState.applyBankedScore(score, to: currentPlayer.id)
+                    currentInput = ""
                 }
             } onFarkle: {
                 gameState.advanceTurn()
@@ -146,17 +149,38 @@ struct ContentView: View {
     
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .principal) {
+            Text("What The Farkle")
+                .font(.custom("Daydream", size: 16))
+                .fontWeight(.bold)
+        }
+        
         ToolbarItem(placement: .navigationBarLeading) {
             if !gameState.players.isEmpty {
-                Button(action: { showingResetAlert = true }) {
-                    Image(systemName: "arrow.counterclockwise")
+                Button(action: {
+                    gameState.undoLastScoreEntry()
+                    currentInput = ""
+                }) {
+                    Image(systemName: "arrow.uturn.backward")
                 }
+                .disabled(!gameState.canUndoLastScoreEntry)
+                .opacity(gameState.canUndoLastScoreEntry ? 1.0 : 0.35)
             }
         }
         
         ToolbarItem(placement: .navigationBarTrailing) {
-            Button(action: { showingPlayerList = true }) {
-                Image(systemName: "person.3.fill")
+            Menu {
+                Button(action: { showingPlayerList = true }) {
+                    Label("Manage Players", systemImage: "person.3.fill")
+                }
+                
+                if !gameState.players.isEmpty {
+                    Button(role: .destructive, action: { showingResetAlert = true }) {
+                        Label("Reset Game", systemImage: "arrow.counterclockwise")
+                    }
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
             }
         }
     }
