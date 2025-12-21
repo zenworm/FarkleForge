@@ -208,6 +208,7 @@ class GameState {
     
     func resetGame() {
         players.removeAll()
+        targetScore = 10000 // Reset to default
         currentTurnIndex = 0
         isFinalRound = false
         finalRoundTriggerPlayerId = nil

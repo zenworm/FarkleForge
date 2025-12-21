@@ -11,6 +11,7 @@ struct ContentView: View {
     @Environment(GameState.self) private var gameState
     @State private var currentInput = ""
     @State private var showingPlayerList = false
+    @State private var showingGameSetup = false
     @State private var showingResetAlert = false
     @State private var showingCelebration = false
     
@@ -21,6 +22,9 @@ struct ContentView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     toolbarContent
+                }
+                .sheet(isPresented: $showingGameSetup) {
+                    GameSetupView()
                 }
                 .sheet(isPresented: $showingPlayerList) {
                     PlayerListView()
@@ -70,7 +74,7 @@ struct ContentView: View {
             Text("Add players to start tracking scores")
                 .foregroundColor(.secondary)
             
-            Button(action: { showingPlayerList = true }) {
+            Button(action: { showingGameSetup = true }) {
                 Text("Start game")
                     .font(.custom("Daydream", size: 20))
                     .padding()
