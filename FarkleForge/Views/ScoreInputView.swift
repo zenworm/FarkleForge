@@ -58,7 +58,6 @@ struct ScoreInputView: View {
                 ForEach(["7", "8", "9", "4", "5", "6", "1", "2", "3"], id: \.self) { number in
                     CalculatorButton(
                         title: number,
-                        foregroundColor: .white
                     ) {
                         appendNumber(number)
                     }
@@ -66,21 +65,20 @@ struct ScoreInputView: View {
                 
                 CalculatorButton(
                     title: "00",
-                    foregroundColor: .blue.opacity(0.7)
+                    foregroundColor: Color(red: 163/255.0, green: 234/255.0, blue: 146/255.0) // #A3EA92
                 ) {
                     appendShortcut("00")
                 }
                 
                 CalculatorButton(
                     title: "0",
-                    foregroundColor: .white
                 ) {
                     appendNumber("0")
                 }
                 
                 CalculatorButton(
                     title: "50",
-                    foregroundColor: .blue.opacity(0.7)
+                    foregroundColor: Color(red: 163/255.0, green: 234/255.0, blue: 146/255.0) // #A3EA92
                 ) {
                     appendShortcut("50")
                 }

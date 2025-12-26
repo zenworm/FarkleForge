@@ -18,6 +18,7 @@ class GameState {
         let finalRoundStartedAtTurnIndex: Int?
         let hasAdvancedSinceFinalRound: Bool
         let winner: Player?
+        let targetScore: Int
     }
     
     var players: [Player] = []
@@ -72,7 +73,8 @@ class GameState {
                 finalRoundTriggerPlayerId: finalRoundTriggerPlayerId,
                 finalRoundStartedAtTurnIndex: finalRoundStartedAtTurnIndex,
                 hasAdvancedSinceFinalRound: hasAdvancedSinceFinalRound,
-                winner: winner
+                winner: winner,
+                targetScore: targetScore
             )
         )
     }
@@ -91,6 +93,7 @@ class GameState {
         finalRoundStartedAtTurnIndex = snapshot.finalRoundStartedAtTurnIndex
         hasAdvancedSinceFinalRound = snapshot.hasAdvancedSinceFinalRound
         winner = snapshot.winner
+        targetScore = snapshot.targetScore
         
         invalidateLeaderCache()
     }
@@ -109,17 +112,19 @@ class GameState {
     }
     
     func removePlayer(at offsets: IndexSet) {
-        // Adjust current turn if needed
-        if let index = offsets.first, index < currentTurnIndex {
+        guard let firstIndex = offsets.first else { return }
+        
+        // Adjust current turn if needed before removing
+        if firstIndex < currentTurnIndex {
             currentTurnIndex = max(0, currentTurnIndex - 1)
-        } else if let index = offsets.first, index == currentTurnIndex {
+        } else if firstIndex == currentTurnIndex {
             currentTurnIndex = 0
         }
         
         players.remove(atOffsets: offsets)
         invalidateLeaderCache()
         
-        // Reset turn index if no players left
+        // Ensure turn index is valid after removal
         if players.isEmpty {
             currentTurnIndex = 0
         } else if currentTurnIndex >= players.count {
@@ -233,6 +238,7 @@ class GameState {
         winner = nil
         invalidateLeaderCache()
         clearUndoHistory()
+        // Note: Not saving to persistence - scores reset on each new game
     }
 }
 

@@ -44,7 +44,7 @@ struct ContentView: View {
                                 currentInput = ""
                             }
                         } message: {
-                            Text("This will reset all scores to 0. Are you sure?")
+                            Text("This will remove all players and reset the game. Are you sure?")
                         }
                         .onChange(of: gameState.winner) { oldValue, newValue in
                             if newValue != nil {
@@ -79,19 +79,6 @@ struct ContentView: View {
                     }
                     .padding()
                 }
-                // .background(
-                //     ZStack {
-                //         Image("BackgroundImage")
-                //             .resizable()
-                //             .scaledToFill()
-                //             .ignoresSafeArea(edges: .top)
-                        
-                //         // Color overlay to tint the background
-                //         Color(red: 40/255.0, green: 59/255.0, blue: 36/255.0)
-                //             .opacity(0.95)
-                //             .ignoresSafeArea(edges: .top)
-                //     }
-                // )
                 .onChange(of: gameState.currentTurnIndex) { oldValue, newValue in
                     if let currentPlayer = gameState.currentPlayer {
                         withAnimation(.easeInOut(duration: 0.3)) {
@@ -146,10 +133,6 @@ struct ContentView: View {
         
         ToolbarItem(placement: .navigationBarTrailing) {
             Menu {
-                // Button(action: { showingPlayerList = true }) {
-                //     Label("Edit players", systemImage: "person.3.fill")
-                // }
-                
                 if !gameState.players.isEmpty {
                     Button(role: .destructive, action: { showingResetAlert = true }) {
                         Label("Start over", systemImage: "arrow.counterclockwise")

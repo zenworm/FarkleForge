@@ -130,15 +130,19 @@ class LoopingVideoPlayerView: UIView {
                 height: windowBounds.height
             )
             
+            #if DEBUG
             print("📐 Video layer frame: \(layer.frame)")
             print("📐 View bounds: \(bounds)")
             print("📐 View frame in window: \(viewFrameInWindow)")
             print("📐 Window bounds: \(windowBounds)")
+            #endif
         } else if let layer = playerLayer {
             // Fallback: use screen bounds
             let screenBounds = UIScreen.main.bounds
             layer.frame = screenBounds
+            #if DEBUG
             print("📐 Video layer frame (fallback to screen): \(screenBounds)")
+            #endif
         }
     }
     
@@ -167,37 +171,52 @@ class LoopingVideoPlayerView: UIView {
                 
                 try dataAsset.data.write(to: tempFile)
                 url = tempFile
+                #if DEBUG
                 print("✅ Loaded video from Assets: \(name), size: \(dataAsset.data.count) bytes")
+                #endif
             } catch {
+                #if DEBUG
                 print("❌ Failed to write video data to temp file: \(error)")
+                #endif
             }
         }
         // Fallback: Try bundle path
         else if let path = Bundle.main.path(forResource: name, ofType: type) {
             url = URL(fileURLWithPath: path)
+            #if DEBUG
             print("✅ Found video at bundle path: \(path)")
+            #endif
         }
         // Fallback: Try bundle URL
         else if let bundleUrl = Bundle.main.url(forResource: name, withExtension: type) {
             url = bundleUrl
+            #if DEBUG
             print("✅ Found video at bundle URL: \(bundleUrl)")
+            #endif
         }
         else {
+            #if DEBUG
             print("❌ Video file not found: \(name).\(type)")
+            #endif
             return
         }
         
         guard let videoUrl = url else {
+            #if DEBUG
             print("❌ Failed to create URL for video")
+            #endif
             return
         }
         
         // Check if file exists and is readable
         guard FileManager.default.fileExists(atPath: videoUrl.path) else {
+            #if DEBUG
             print("❌ Video file does not exist at path: \(videoUrl.path)")
+            #endif
             return
         }
         
+        #if DEBUG
         print("📹 Video URL: \(videoUrl)")
         do {
             let attributes = try FileManager.default.attributesOfItem(atPath: videoUrl.path)
@@ -206,6 +225,7 @@ class LoopingVideoPlayerView: UIView {
         } catch {
             print("📹 Could not get file size: \(error)")
         }
+        #endif
         
         // Create player item
         playerItem = AVPlayerItem(url: videoUrl)
@@ -229,8 +249,10 @@ class LoopingVideoPlayerView: UIView {
         layer.masksToBounds = false
         self.layer.masksToBounds = false
         
+        #if DEBUG
         print("📐 Initial layer frame (screen): \(layer.frame)")
         print("📐 View bounds: \(bounds)")
+        #endif
         
         // Observe player item status
         playerItem?.addObserver(self, forKeyPath: "status", options: [.new], context: nil)
@@ -248,7 +270,9 @@ class LoopingVideoPlayerView: UIView {
         // Play the video on main thread after a short delay
         DispatchQueue.main.async { [weak self] in
             self?.player?.play()
+            #if DEBUG
             print("▶️ Video player play() called")
+            #endif
         }
     }
     
@@ -257,12 +281,18 @@ class LoopingVideoPlayerView: UIView {
             if let item = object as? AVPlayerItem {
                 switch item.status {
                 case .readyToPlay:
+                    #if DEBUG
                     print("✅ Video is ready to play")
+                    #endif
                     player?.play()
                 case .failed:
+                    #if DEBUG
                     print("❌ Video failed to load: \(item.error?.localizedDescription ?? "Unknown error")")
+                    #endif
                 case .unknown:
+                    #if DEBUG
                     print("⏳ Video status unknown")
+                    #endif
                 @unknown default:
                     break
                 }
@@ -271,7 +301,7 @@ class LoopingVideoPlayerView: UIView {
     }
     
     func updateFrame() {
-        playerLayer?.frame = bounds
+        // Trigger layout update which will properly position the layer
         setNeedsLayout()
     }
     

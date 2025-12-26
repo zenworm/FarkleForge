@@ -73,14 +73,12 @@ struct PlayerRowView: View {
                 HStack {
                     Text(player.name)
                         .font(.custom("Daydream", size: 20))
-                        // .fontWeight(.bold)
                         .foregroundColor(isCurrentTurn ? Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0) : Color(red: 145/255.0, green: 218/255.0, blue: 127/255.0))
                     
                     Spacer()
                     
                     Text("\(player.score)")
                         .font(.custom("Daydream", size: 20))
-                        // .font(.system(size: 36, weight: .bold, design: .rounded))
                         .foregroundColor(isCurrentTurn ? Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0) : Color(red: 145/255.0, green: 218/255.0, blue: 127/255.0))
                 }
                 
