@@ -33,7 +33,7 @@
 	</array>
 	<key>UIAppFonts</key>
 	<array>
-		<string>Daydream.otf</string>
+		<string>Daydream.ttf</string>
 	</array>
 	<key>UIUserInterfaceStyle</key>
 	<string>Dark</string>

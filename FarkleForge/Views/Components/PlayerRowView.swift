@@ -37,7 +37,7 @@ struct PlayerRowView: View {
     
     var progressBarColor: Color {
         if isCurrentTurn {
-            return Color(red: 255/255.0, green: 255/255.0, blue: 255/255.0).opacity(0.3) // #ffffff at 30%
+            return Color(red: 33/255.0, green: 204/255.0, blue: 38/255.0) // #21CC26
         } else {
             return Color(red: 159/255.0, green: 255/255.0, blue: 161/255.0).opacity(0.12) // #9FFFA1 at 12%
         }
@@ -58,7 +58,7 @@ struct PlayerRowView: View {
         ZStack(alignment: .leading) {
             // Background container
             shape
-                .fill(isCurrentTurn ? Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0) : Color.clear) // #60C946 or transparent
+                .fill(isCurrentTurn ? Color(red: 120/255.0, green: 220/255.0, blue: 115/255.0) : Color.clear) // #78DC73 or transparent
             
             // Progress bar (full bleed on left, top, bottom)
             GeometryReader { geometry in
@@ -85,10 +85,10 @@ struct PlayerRowView: View {
                 }
                 
                 if let pointsNeeded = pointsNeeded, isCurrentTurn {
-                    Text("Need \(pointsNeeded) points to win")
-                        .font(.subheadline)
-                        .foregroundColor(.orange)
-                        .fontWeight(.semibold)
+                    Text("\(pointsNeeded) to win")
+                        .font(.custom("Daydream", size: 12))
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                 }
             }
             .padding()

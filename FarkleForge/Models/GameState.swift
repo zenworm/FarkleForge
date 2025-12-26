@@ -219,5 +219,20 @@ class GameState {
         clearUndoHistory()
         PlayerPersistence.save(players)
     }
+    
+    func resetScores() {
+        // Reset all player scores to 0 but keep the players
+        for index in players.indices {
+            players[index].score = 0
+        }
+        currentTurnIndex = 0
+        isFinalRound = false
+        finalRoundTriggerPlayerId = nil
+        finalRoundStartedAtTurnIndex = nil
+        hasAdvancedSinceFinalRound = false
+        winner = nil
+        invalidateLeaderCache()
+        clearUndoHistory()
+    }
 }
 

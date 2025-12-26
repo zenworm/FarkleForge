@@ -6,140 +6,285 @@
 //
 
 import SwiftUI
+import AVKit
+import AVFoundation
 
 struct CelebrationView: View {
+    @Environment(GameState.self) private var gameState
     let winnerName: String
     let onDismiss: () -> Void
-    @State private var showConfetti = false
-    @State private var scale: CGFloat = 0.5
-    @State private var rotation: Double = 0
-    @State private var opacity: Double = 0
+    @State private var showBottomSheet = false
     
     var body: some View {
         ZStack {
-            // Confetti particles
-            if showConfetti {
-                ForEach(0..<50, id: \.self) { index in
-                    ConfettiParticle(index: index)
-                }
-            }
+            // Fullscreen video background
+            LoopingVideoPlayer(videoName: "farklemaster", videoType: "mp4")
             
-            // Celebration content
-            VStack(spacing: 24) {
-                // Trophy icon
-                Image(systemName: "trophy.fill")
-                    .font(.system(size: 80))
-                    .foregroundColor(.yellow)
-                    .scaleEffect(scale)
-                    .rotationEffect(.degrees(rotation))
+            // Bottom sheet
+            VStack {
+                Spacer()
                 
-                // Winner text
-                Text("\(winnerName) Wins!")
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .foregroundColor(.primary)
-                    .opacity(opacity)
-                
-                Text("Congratulations!")
-                    .font(.title2)
-                    .foregroundColor(.secondary)
-                    .opacity(opacity)
-                
-                Button(action: onDismiss) {
-                    Text("Done")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 32)
-                        .padding(.vertical, 12)
-                        .background(Color.blue)
-                        .cornerRadius(8)
+                if showBottomSheet {
+                    VStack(spacing: 24) {
+                        Text("\(winnerName) is the Farkle Master!")
+                            .font(.custom("Daydream", size: 28))
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                        
+                        Button(action: {
+                            gameState.resetScores()
+                            onDismiss()
+                        }) {
+                            Text("Let's Farkle again")
+                                .font(.custom("Daydream", size: 20))
+                                .fontWeight(.bold)
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .background(Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0)) // bankColor
+                                .cornerRadius(3)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 3)
+                                        .stroke(Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0), lineWidth: 2)
+                                )
+                        }
+                        .padding(.horizontal)
+                    }
+                    .padding(.vertical, 32)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                        .fill(Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0)) // containerColor
+                    )
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-                .opacity(opacity)
             }
-            .padding(40)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color(.systemBackground))
-                    .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 10)
-            )
-            .opacity(opacity)
         }
+        .edgesIgnoringSafeArea(.all)
         .onAppear {
-            // Animate confetti
-            withAnimation(.easeOut(duration: 0.3)) {
-                showConfetti = true
-            }
-            
-            // Animate trophy
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
-                scale = 1.0
-                rotation = 360
-            }
-            
-            // Animate text
-            withAnimation(.easeIn(duration: 0.5).delay(0.2)) {
-                opacity = 1.0
+            // Show bottom sheet after 2 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    showBottomSheet = true
+                }
             }
         }
     }
 }
 
-struct ConfettiParticle: View {
-    let index: Int
-    @State private var yOffset: CGFloat = -300
-    @State private var xOffset: CGFloat = 0
-    @State private var rotation: Double = 0
-    @State private var opacity: Double = 1.0
+struct LoopingVideoPlayer: UIViewRepresentable {
+    let videoName: String
+    let videoType: String
     
-    private let colors: [Color] = [.red, .blue, .green, .yellow, .orange, .purple, .pink, .cyan, .mint]
-    private let color: Color
-    private let startX: CGFloat
-    private let size: CGFloat
-    
-    init(index: Int) {
-        self.index = index
-        self.color = colors[index % colors.count]
-        
-        // Randomize starting position and size
-        self.startX = CGFloat.random(in: -200...200)
-        self.size = CGFloat.random(in: 6...12)
-        self._xOffset = State(initialValue: startX)
+    func makeUIView(context: Context) -> LoopingVideoPlayerView {
+        let view = LoopingVideoPlayerView()
+        view.setupVideo(name: videoName, type: videoType)
+        return view
     }
     
-    var body: some View {
-        RoundedRectangle(cornerRadius: 2)
-            .fill(color)
-            .frame(width: size, height: size * 1.5)
-            .offset(x: xOffset, y: yOffset)
-            .rotationEffect(.degrees(rotation))
-            .opacity(opacity)
-            .onAppear {
-                // Randomize animation parameters
-                let randomDuration = Double.random(in: 2.5...4.5)
-                let randomRotation = Double.random(in: 720...2160) // 2-6 full rotations
-                let randomXMovement = CGFloat.random(in: -150...150)
-                let randomDelay = Double.random(in: 0...0.5)
+    func updateUIView(_ uiView: LoopingVideoPlayerView, context: Context) {
+        // Update layer frame when view size changes
+        uiView.updateFrame()
+    }
+    
+    static func dismantleUIView(_ uiView: LoopingVideoPlayerView, coordinator: ()) {
+        // Cleanup if needed
+    }
+}
+
+class LoopingVideoPlayerView: UIView {
+    private var player: AVPlayer?
+    private var playerLayer: AVPlayerLayer?
+    private var playerItem: AVPlayerItem?
+    private var observer: NSObjectProtocol?
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .black
+        clipsToBounds = false
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // Make sure layer fills entire screen, including under status bar
+        if let layer = playerLayer, let window = window {
+            let windowBounds = window.bounds
+            
+            // Get view's frame in window coordinates
+            let viewFrameInWindow = convert(bounds, to: window)
+            
+            // Calculate offset to position layer at window origin (0,0)
+            let offsetX = -viewFrameInWindow.origin.x
+            let offsetY = -viewFrameInWindow.origin.y
+            
+            // Set layer frame to cover entire window
+            layer.frame = CGRect(
+                x: offsetX,
+                y: offsetY,
+                width: windowBounds.width,
+                height: windowBounds.height
+            )
+            
+            print("📐 Video layer frame: \(layer.frame)")
+            print("📐 View bounds: \(bounds)")
+            print("📐 View frame in window: \(viewFrameInWindow)")
+            print("📐 Window bounds: \(windowBounds)")
+        } else if let layer = playerLayer {
+            // Fallback: use screen bounds
+            let screenBounds = UIScreen.main.bounds
+            layer.frame = screenBounds
+            print("📐 Video layer frame (fallback to screen): \(screenBounds)")
+        }
+    }
+    
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        // Update frame when view is added to window
+        if window != nil {
+            setNeedsLayout()
+        }
+    }
+    
+    func setupVideo(name: String, type: String) {
+        var url: URL?
+        
+        // Try loading from Assets.xcassets (data asset)
+        if let dataAsset = NSDataAsset(name: name) {
+            // Create a temporary file to play the video
+            let tempDir = FileManager.default.temporaryDirectory
+            let tempFile = tempDir.appendingPathComponent("\(name).\(type)")
+            
+            do {
+                // Remove existing file if present
+                if FileManager.default.fileExists(atPath: tempFile.path) {
+                    try FileManager.default.removeItem(at: tempFile)
+                }
                 
-                // Delay the animation start slightly for staggered effect
-                DispatchQueue.main.asyncAfter(deadline: .now() + randomDelay) {
-                    withAnimation(.linear(duration: randomDuration)) {
-                        yOffset = 1200
-                        xOffset = startX + randomXMovement
-                        rotation = randomRotation
-                    }
-                    
-                    // Fade out
-                    withAnimation(.linear(duration: randomDuration * 0.7).delay(randomDuration * 0.3)) {
-                        opacity = 0
-                    }
+                try dataAsset.data.write(to: tempFile)
+                url = tempFile
+                print("✅ Loaded video from Assets: \(name), size: \(dataAsset.data.count) bytes")
+            } catch {
+                print("❌ Failed to write video data to temp file: \(error)")
+            }
+        }
+        // Fallback: Try bundle path
+        else if let path = Bundle.main.path(forResource: name, ofType: type) {
+            url = URL(fileURLWithPath: path)
+            print("✅ Found video at bundle path: \(path)")
+        }
+        // Fallback: Try bundle URL
+        else if let bundleUrl = Bundle.main.url(forResource: name, withExtension: type) {
+            url = bundleUrl
+            print("✅ Found video at bundle URL: \(bundleUrl)")
+        }
+        else {
+            print("❌ Video file not found: \(name).\(type)")
+            return
+        }
+        
+        guard let videoUrl = url else {
+            print("❌ Failed to create URL for video")
+            return
+        }
+        
+        // Check if file exists and is readable
+        guard FileManager.default.fileExists(atPath: videoUrl.path) else {
+            print("❌ Video file does not exist at path: \(videoUrl.path)")
+            return
+        }
+        
+        print("📹 Video URL: \(videoUrl)")
+        do {
+            let attributes = try FileManager.default.attributesOfItem(atPath: videoUrl.path)
+            let fileSize = attributes[.size] as? Int64 ?? 0
+            print("📹 File size: \(fileSize) bytes")
+        } catch {
+            print("📹 Could not get file size: \(error)")
+        }
+        
+        // Create player item
+        playerItem = AVPlayerItem(url: videoUrl)
+        player = AVPlayer(playerItem: playerItem)
+        
+        // Create player layer
+        playerLayer = AVPlayerLayer(player: player)
+        guard let layer = playerLayer else { return }
+        
+        layer.videoGravity = .resizeAspectFill
+        // Use screen bounds initially, will be updated in layoutSubviews
+        if let window = window {
+            layer.frame = window.bounds
+        } else {
+            layer.frame = UIScreen.main.bounds
+        }
+        layer.backgroundColor = UIColor.black.cgColor
+        self.layer.addSublayer(layer)
+        
+        // Ensure layer fills the entire view and extends beyond
+        layer.masksToBounds = false
+        self.layer.masksToBounds = false
+        
+        print("📐 Initial layer frame (screen): \(layer.frame)")
+        print("📐 View bounds: \(bounds)")
+        
+        // Observe player item status
+        playerItem?.addObserver(self, forKeyPath: "status", options: [.new], context: nil)
+        
+        // Loop the video
+        observer = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: playerItem,
+            queue: .main
+        ) { [weak self] _ in
+            self?.player?.seek(to: .zero)
+            self?.player?.play()
+        }
+        
+        // Play the video on main thread after a short delay
+        DispatchQueue.main.async { [weak self] in
+            self?.player?.play()
+            print("▶️ Video player play() called")
+        }
+    }
+    
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        if keyPath == "status" {
+            if let item = object as? AVPlayerItem {
+                switch item.status {
+                case .readyToPlay:
+                    print("✅ Video is ready to play")
+                    player?.play()
+                case .failed:
+                    print("❌ Video failed to load: \(item.error?.localizedDescription ?? "Unknown error")")
+                case .unknown:
+                    print("⏳ Video status unknown")
+                @unknown default:
+                    break
                 }
             }
+        }
+    }
+    
+    func updateFrame() {
+        playerLayer?.frame = bounds
+        setNeedsLayout()
+    }
+    
+    deinit {
+        playerItem?.removeObserver(self, forKeyPath: "status")
+        if let observer = observer {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        player?.pause()
     }
 }
 
 #Preview {
-    ZStack {
-        Color.gray.opacity(0.3)
-        CelebrationView(winnerName: "Alice", onDismiss: {})
-    }
+    CelebrationView(winnerName: "Alice", onDismiss: {})
 }
 

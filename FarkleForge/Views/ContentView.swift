@@ -16,75 +16,47 @@ struct ContentView: View {
     @State private var showingCelebration = false
     
     var body: some View {
-        NavigationStack {
-            mainContent
-                .navigationTitle("What The Farkle")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    toolbarContent
-                }
+        Group {
+            if gameState.players.isEmpty {
+                // Splash screen - no navigation
+                SplashView(onStartGame: {
+                    showingGameSetup = true
+                })
                 .sheet(isPresented: $showingGameSetup) {
                     GameSetupView()
                 }
-                .sheet(isPresented: $showingPlayerList) {
-                    PlayerListView()
-                }
-                .alert("Reset Game", isPresented: $showingResetAlert) {
-                    Button("Cancel", role: .cancel) { }
-                    Button("Reset", role: .destructive) {
-                        gameState.resetGame()
-                        currentInput = ""
-                    }
-                } message: {
-                    Text("This will reset all scores to 0. Are you sure?")
-                }
-                .onChange(of: gameState.winner) { oldValue, newValue in
-                    if newValue != nil {
-                        showingCelebration = true
-                    }
-                }
-                .fullScreenCover(isPresented: $showingCelebration) {
-                    celebrationOverlay
-                }
-        }
-    }
-    
-    @ViewBuilder
-    private var mainContent: some View {
-        VStack(spacing: 0) {
-            if gameState.players.isEmpty {
-                emptyStateView
             } else {
-                gameInProgressView
+                // Game view - with navigation
+                NavigationStack {
+                    gameInProgressView
+                        .navigationTitle("What The Farkle")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            toolbarContent
+                        }
+                        .sheet(isPresented: $showingPlayerList) {
+                            PlayerListView()
+                        }
+                        .alert("Start over", isPresented: $showingResetAlert) {
+                            Button("Cancel", role: .cancel) { }
+                            Button("Reset", role: .destructive) {
+                                gameState.resetGame()
+                                currentInput = ""
+                            }
+                        } message: {
+                            Text("This will reset all scores to 0. Are you sure?")
+                        }
+                        .onChange(of: gameState.winner) { oldValue, newValue in
+                            if newValue != nil {
+                                showingCelebration = true
+                            }
+                        }
+                        .fullScreenCover(isPresented: $showingCelebration) {
+                            celebrationOverlay
+                        }
+                }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-    
-    private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "person.3.fill")
-                .font(.system(size: 80))
-                .foregroundColor(.gray)
-            
-            Text("No Players Yet")
-                .font(.title)
-                .fontWeight(.bold)
-            
-            Text("Add players to start tracking scores")
-                .foregroundColor(.secondary)
-            
-            Button(action: { showingGameSetup = true }) {
-                Text("Start game")
-                    .font(.custom("Daydream", size: 20))
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(4)
-            }
-            .padding(.top)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private var gameInProgressView: some View {
@@ -107,19 +79,19 @@ struct ContentView: View {
                     }
                     .padding()
                 }
-                .background(
-                    ZStack {
-                        Image("BackgroundImage")
-                            .resizable()
-                            .scaledToFill()
-                            .ignoresSafeArea(edges: .top)
+                // .background(
+                //     ZStack {
+                //         Image("BackgroundImage")
+                //             .resizable()
+                //             .scaledToFill()
+                //             .ignoresSafeArea(edges: .top)
                         
-                        // Color overlay to tint the background
-                        Color(red: 40/255.0, green: 59/255.0, blue: 36/255.0)
-                            .opacity(0.95)
-                            .ignoresSafeArea(edges: .top)
-                    }
-                )
+                //         // Color overlay to tint the background
+                //         Color(red: 40/255.0, green: 59/255.0, blue: 36/255.0)
+                //             .opacity(0.95)
+                //             .ignoresSafeArea(edges: .top)
+                //     }
+                // )
                 .onChange(of: gameState.currentTurnIndex) { oldValue, newValue in
                     if let currentPlayer = gameState.currentPlayer {
                         withAnimation(.easeInOut(duration: 0.3)) {
@@ -174,13 +146,13 @@ struct ContentView: View {
         
         ToolbarItem(placement: .navigationBarTrailing) {
             Menu {
-                Button(action: { showingPlayerList = true }) {
-                    Label("Manage Players", systemImage: "person.3.fill")
-                }
+                // Button(action: { showingPlayerList = true }) {
+                //     Label("Edit players", systemImage: "person.3.fill")
+                // }
                 
                 if !gameState.players.isEmpty {
                     Button(role: .destructive, action: { showingResetAlert = true }) {
-                        Label("Reset Game", systemImage: "arrow.counterclockwise")
+                        Label("Start over", systemImage: "arrow.counterclockwise")
                     }
                 }
             } label: {
