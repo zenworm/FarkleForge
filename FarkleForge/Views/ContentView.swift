@@ -11,88 +11,68 @@ struct ContentView: View {
     @Environment(GameState.self) private var gameState
     @State private var currentInput = ""
     @State private var showingPlayerList = false
+    @State private var showingGameSetup = false
     @State private var showingResetAlert = false
     @State private var showingCelebration = false
     
     var body: some View {
-        NavigationStack {
-            mainContent
-                .navigationTitle("Farkle Forge")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    toolbarContent
-                }
-                .sheet(isPresented: $showingPlayerList) {
-                    PlayerListView()
-                }
-                .alert("Reset Game", isPresented: $showingResetAlert) {
-                    Button("Cancel", role: .cancel) { }
-                    Button("Reset", role: .destructive) {
-                        gameState.resetGame()
-                        currentInput = ""
-                    }
-                } message: {
-                    Text("This will reset all scores to 0. Are you sure?")
-                }
-                .onChange(of: gameState.winner) { oldValue, newValue in
-                    if newValue != nil {
-                        showingCelebration = true
-                    }
-                }
-                .fullScreenCover(isPresented: $showingCelebration) {
-                    celebrationOverlay
-                }
-        }
-    }
-    
-    @ViewBuilder
-    private var mainContent: some View {
-        VStack(spacing: 0) {
+        Group {
             if gameState.players.isEmpty {
-                emptyStateView
+                // Splash screen - no navigation
+                SplashView(onStartGame: {
+                    showingGameSetup = true
+                })
+                .sheet(isPresented: $showingGameSetup) {
+                    GameSetupView()
+                }
             } else {
-                gameInProgressView
+                // Game view - with navigation
+                NavigationStack {
+                    gameInProgressView
+                        .navigationTitle("What The Farkle")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            toolbarContent
+                        }
+                        .sheet(isPresented: $showingPlayerList) {
+                            PlayerListView()
+                        }
+                        .alert("Start over", isPresented: $showingResetAlert) {
+                            Button("Cancel", role: .cancel) { }
+                            Button("Reset", role: .destructive) {
+                                gameState.resetGame()
+                                currentInput = ""
+                            }
+                        } message: {
+                            Text("This will remove all players and reset the game. Are you sure?")
+                        }
+                        .onChange(of: gameState.winner) { oldValue, newValue in
+                            if newValue != nil {
+                                showingCelebration = true
+                            }
+                        }
+                        .fullScreenCover(isPresented: $showingCelebration) {
+                            celebrationOverlay
+                        }
+                }
             }
         }
-    }
-    
-    private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "person.3.fill")
-                .font(.system(size: 80))
-                .foregroundColor(.gray)
-            
-            Text("No Players Yet")
-                .font(.title)
-                .fontWeight(.bold)
-            
-            Text("Add players to start tracking scores")
-                .foregroundColor(.secondary)
-            
-            Button(action: { showingPlayerList = true }) {
-                Label("Add Players", systemImage: "person.badge.plus")
-                    .font(.headline)
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(4)
-            }
-            .padding(.top)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private var gameInProgressView: some View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(spacing: 16) {
-                        ForEach(gameState.players) { player in
+                    VStack(spacing: 0) {
+                        ForEach(Array(gameState.players.enumerated()), id: \.element.id) { index, player in
                             PlayerRowView(
                                 player: player,
                                 isCurrentTurn: player.id == gameState.currentPlayer?.id,
                                 isFinalRound: gameState.isFinalRound,
-                                leaderScore: gameState.leaderScore
+                                leaderScore: gameState.leaderScore,
+                                targetScore: gameState.targetScore,
+                                isFirst: index == 0,
+                                isLast: index == gameState.players.count - 1
                             )
                             .id(player.id)
                         }
@@ -121,8 +101,8 @@ struct ContentView: View {
             
             ScoreInputView(currentInput: $currentInput) { score in
                 if let currentPlayer = gameState.currentPlayer {
-                    gameState.addScore(score, to: currentPlayer.id)
-                    gameState.advanceTurn()
+                    gameState.applyBankedScore(score, to: currentPlayer.id)
+                    currentInput = ""
                 }
             } onFarkle: {
                 gameState.advanceTurn()
@@ -132,17 +112,34 @@ struct ContentView: View {
     
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .principal) {
+            Text("What The Farkle")
+                .font(.custom("Daydream", size: 16))
+                .fontWeight(.bold)
+        }
+        
         ToolbarItem(placement: .navigationBarLeading) {
             if !gameState.players.isEmpty {
-                Button(action: { showingResetAlert = true }) {
-                    Image(systemName: "arrow.counterclockwise")
+                Button(action: {
+                    gameState.undoLastScoreEntry()
+                    currentInput = ""
+                }) {
+                    Image(systemName: "arrow.uturn.backward")
                 }
+                .disabled(!gameState.canUndoLastScoreEntry)
+                .opacity(gameState.canUndoLastScoreEntry ? 1.0 : 0.35)
             }
         }
         
         ToolbarItem(placement: .navigationBarTrailing) {
-            Button(action: { showingPlayerList = true }) {
-                Image(systemName: "person.3.fill")
+            Menu {
+                if !gameState.players.isEmpty {
+                    Button(role: .destructive, action: { showingResetAlert = true }) {
+                        Label("Start over", systemImage: "arrow.counterclockwise")
+                    }
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
             }
         }
     }
