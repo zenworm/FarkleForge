@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		67EC512F2F74BDBE002BF1D3 /* CelebrationVideoCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67EC512E2F74BDBE002BF1D3 /* CelebrationVideoCache.swift */; };
 		FA0001 /* FarkleScoreTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000 /* FarkleScoreTrackerApp.swift */; };
 		FA0003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002 /* ContentView.swift */; };
 		FA0005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FA0004 /* Assets.xcassets */; };
@@ -23,6 +24,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		67EC512E2F74BDBE002BF1D3 /* CelebrationVideoCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CelebrationVideoCache.swift; sourceTree = "<group>"; };
 		FA0000 /* FarkleScoreTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarkleScoreTrackerApp.swift; sourceTree = "<group>"; };
 		FA0002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		FA0004 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -81,6 +83,7 @@
 		FA0008 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				67EC512E2F74BDBE002BF1D3 /* CelebrationVideoCache.swift */,
 				FA0009 /* Player.swift */,
 				FA0010A /* GameState.swift */,
 				FA0016A /* PlayerPersistence.swift */,
@@ -201,6 +204,7 @@
 				FA0017 /* PlayerPersistence.swift in Sources */,
 				FA0018 /* GameSetupView.swift in Sources */,
 				FA0019 /* SplashView.swift in Sources */,
+				67EC512F2F74BDBE002BF1D3 /* CelebrationVideoCache.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

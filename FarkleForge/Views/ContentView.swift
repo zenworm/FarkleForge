@@ -9,11 +9,13 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(GameState.self) private var gameState
+    @Environment(\.videoCache) private var videoCache
     @State private var currentInput = ""
     @State private var showingPlayerList = false
     @State private var showingGameSetup = false
     @State private var showingResetAlert = false
     @State private var showingCelebration = false
+    @State private var celebrationVideoURL: URL? = nil
     
     var body: some View {
         Group {
@@ -48,6 +50,7 @@ struct ContentView: View {
                         }
                         .onChange(of: gameState.winner) { oldValue, newValue in
                             if newValue != nil {
+                                celebrationVideoURL = videoCache.pickRandom()
                                 showingCelebration = true
                             }
                         }
@@ -151,7 +154,7 @@ struct ContentView: View {
                 .ignoresSafeArea()
             
             if let winner = gameState.winner {
-                CelebrationView(winnerName: winner.name) {
+                CelebrationView(winnerName: winner.name, videoURL: celebrationVideoURL) {
                     showingCelebration = false
                 }
             }

@@ -12,6 +12,7 @@ import AVFoundation
 struct CelebrationView: View {
     @Environment(GameState.self) private var gameState
     let winnerName: String
+    let videoURL: URL?
     let onDismiss: () -> Void
     @State private var showBottomSheet = false
     @State private var showScores = false
@@ -45,7 +46,7 @@ struct CelebrationView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             // Fullscreen video background
-            LoopingVideoPlayer(videoName: "farklemaster", videoType: "mp4")
+            LoopingVideoPlayer(url: videoURL)
                 .ignoresSafeArea()
 
             // Main bottom sheet
@@ -171,20 +172,28 @@ struct CelebrationView: View {
 }
 
 struct LoopingVideoPlayer: UIViewRepresentable {
-    let videoName: String
-    let videoType: String
-    
+    let videoURL: URL?
+
+    /// Use a pre-cached URL from CelebrationVideoCache.
+    init(url: URL?) {
+        self.videoURL = url
+    }
+
     func makeUIView(context: Context) -> LoopingVideoPlayerView {
         let view = LoopingVideoPlayerView()
-        view.setupVideo(name: videoName, type: videoType)
+        if let url = videoURL {
+            view.setupVideo(url: url)
+        } else {
+            // Fallback: load celebration_001 directly if cache missed
+            view.setupVideo(name: "celebration_001", type: "mp4")
+        }
         return view
     }
-    
+
     func updateUIView(_ uiView: LoopingVideoPlayerView, context: Context) {
-        // Update layer frame when view size changes
         uiView.updateFrame()
     }
-    
+
     static func dismantleUIView(_ uiView: LoopingVideoPlayerView, coordinator: ()) {
         // Cleanup if needed
     }
@@ -251,89 +260,47 @@ class LoopingVideoPlayerView: UIView {
         }
     }
     
+    /// Fast path: URL already resolved by CelebrationVideoCache — skips NSDataAsset entirely.
+    func setupVideo(url: URL) {
+        setupPlayer(with: url)
+    }
+
+    /// Fallback path: resolves the asset by name (used when cache missed).
     func setupVideo(name: String, type: String) {
         var url: URL?
-        
-        // Try loading from Assets.xcassets (data asset)
+
         if let dataAsset = NSDataAsset(name: name) {
-            // Create a temporary file to play the video
-            let tempDir = FileManager.default.temporaryDirectory
-            let tempFile = tempDir.appendingPathComponent("\(name).\(type)")
-            
+            let tempFile = FileManager.default.temporaryDirectory
+                .appendingPathComponent("\(name).\(type)")
             do {
-                // Remove existing file if present
                 if FileManager.default.fileExists(atPath: tempFile.path) {
                     try FileManager.default.removeItem(at: tempFile)
                 }
-                
                 try dataAsset.data.write(to: tempFile)
                 url = tempFile
-                #if DEBUG
-                print("✅ Loaded video from Assets: \(name), size: \(dataAsset.data.count) bytes")
-                #endif
-            } catch {
-                #if DEBUG
-                print("❌ Failed to write video data to temp file: \(error)")
-                #endif
-            }
-        }
-        // Fallback: Try bundle path
-        else if let path = Bundle.main.path(forResource: name, ofType: type) {
+            } catch {}
+        } else if let path = Bundle.main.path(forResource: name, ofType: type) {
             url = URL(fileURLWithPath: path)
-            #if DEBUG
-            print("✅ Found video at bundle path: \(path)")
-            #endif
-        }
-        // Fallback: Try bundle URL
-        else if let bundleUrl = Bundle.main.url(forResource: name, withExtension: type) {
+        } else if let bundleUrl = Bundle.main.url(forResource: name, withExtension: type) {
             url = bundleUrl
-            #if DEBUG
-            print("✅ Found video at bundle URL: \(bundleUrl)")
-            #endif
         }
-        else {
-            #if DEBUG
-            print("❌ Video file not found: \(name).\(type)")
-            #endif
-            return
-        }
-        
-        guard let videoUrl = url else {
-            #if DEBUG
-            print("❌ Failed to create URL for video")
-            #endif
-            return
-        }
-        
-        // Check if file exists and is readable
-        guard FileManager.default.fileExists(atPath: videoUrl.path) else {
-            #if DEBUG
-            print("❌ Video file does not exist at path: \(videoUrl.path)")
-            #endif
-            return
-        }
-        
-        #if DEBUG
-        print("📹 Video URL: \(videoUrl)")
-        do {
-            let attributes = try FileManager.default.attributesOfItem(atPath: videoUrl.path)
-            let fileSize = attributes[.size] as? Int64 ?? 0
-            print("📹 File size: \(fileSize) bytes")
-        } catch {
-            print("📹 Could not get file size: \(error)")
-        }
-        #endif
-        
+
+        guard let videoUrl = url,
+              FileManager.default.fileExists(atPath: videoUrl.path) else { return }
+
+        setupPlayer(with: videoUrl)
+    }
+
+    private func setupPlayer(with videoUrl: URL) {
         // Create player item
         playerItem = AVPlayerItem(url: videoUrl)
         player = AVPlayer(playerItem: playerItem)
-        
+
         // Create player layer
         playerLayer = AVPlayerLayer(player: player)
         guard let layer = playerLayer else { return }
-        
+
         layer.videoGravity = .resizeAspectFill
-        // Use screen bounds initially, will be updated in layoutSubviews
         if let window = window {
             layer.frame = window.bounds
         } else {
@@ -341,19 +308,12 @@ class LoopingVideoPlayerView: UIView {
         }
         layer.backgroundColor = UIColor.black.cgColor
         self.layer.addSublayer(layer)
-        
-        // Ensure layer fills the entire view and extends beyond
         layer.masksToBounds = false
         self.layer.masksToBounds = false
-        
-        #if DEBUG
-        print("📐 Initial layer frame (screen): \(layer.frame)")
-        print("📐 View bounds: \(bounds)")
-        #endif
-        
+
         // Observe player item status
         playerItem?.addObserver(self, forKeyPath: "status", options: [.new], context: nil)
-        
+
         // Loop the video
         observer = NotificationCenter.default.addObserver(
             forName: .AVPlayerItemDidPlayToEndTime,
@@ -412,6 +372,6 @@ class LoopingVideoPlayerView: UIView {
 }
 
 #Preview {
-    CelebrationView(winnerName: "Alice", onDismiss: {})
+    CelebrationView(winnerName: "Alice", videoURL: nil, onDismiss: {})
 }
 
