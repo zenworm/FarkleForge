@@ -16,52 +16,75 @@ struct CelebrationView: View {
     @State private var showBottomSheet = false
     
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottom) {
             // Fullscreen video background
             LoopingVideoPlayer(videoName: "farklemaster", videoType: "mp4")
-            
+                .ignoresSafeArea()
+
             // Bottom sheet
-            VStack {
-                Spacer()
-                
-                if showBottomSheet {
-                    VStack(spacing: 24) {
-                        Text("\(winnerName) is the Farkle Master!")
-                            .font(.custom("Daydream", size: 28))
+            if showBottomSheet {
+                VStack(spacing: 24) {
+                    Text("\(winnerName) is the Farkle Master!")
+                        .font(.custom("Daydream", size: 28))
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+
+                    Button(action: {
+                        gameState.resetScores()
+                        onDismiss()
+                    }) {
+                        Text("Let's Farkle again")
+                            .font(.custom("Daydream", size: 20))
                             .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-                        
-                        Button(action: {
-                            gameState.resetScores()
-                            onDismiss()
-                        }) {
-                            Text("Let's Farkle again")
-                                .font(.custom("Daydream", size: 20))
-                                .fontWeight(.bold)
-                                .foregroundColor(.black)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 50)
-                                .background(Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0)) // bankColor
-                                .cornerRadius(3)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 3)
-                                        .stroke(Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0), lineWidth: 2)
-                                )
-                        }
-                        .padding(.horizontal)
+                            .foregroundColor(.black)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0))
+                            .cornerRadius(3)
                     }
-                    .padding(.vertical, 32)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20)
-                        .fill(Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0)) // containerColor
-                    )
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .padding(.horizontal, 24)
                 }
+                .padding(.top, 28)
+                .padding(.bottom, 48)
+                .frame(maxWidth: .infinity)
+                .background(
+                    ZStack {
+                        // Frosted glass base
+                        UnevenRoundedRectangle(
+                            topLeadingRadius: 28,
+                            bottomLeadingRadius: 0,
+                            bottomTrailingRadius: 0,
+                            topTrailingRadius: 28
+                        )
+                        .fill(.ultraThinMaterial)
+
+                        // Liquid tint overlay
+                        UnevenRoundedRectangle(
+                            topLeadingRadius: 28,
+                            bottomLeadingRadius: 0,
+                            bottomTrailingRadius: 0,
+                            topTrailingRadius: 28
+                        )
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.18),
+                                    Color.white.opacity(0.06)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+
+                    }
+                )
+                .ignoresSafeArea(edges: .bottom)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .edgesIgnoringSafeArea(.all)
+        .ignoresSafeArea()
         .onAppear {
             // Show bottom sheet after 2 seconds
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {

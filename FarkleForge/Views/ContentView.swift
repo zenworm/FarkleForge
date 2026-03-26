@@ -154,7 +154,6 @@ struct ContentView: View {
                 CelebrationView(winnerName: winner.name) {
                     showingCelebration = false
                 }
-                .padding()
             }
         }
     }
