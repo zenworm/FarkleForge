@@ -14,15 +14,42 @@ struct CelebrationView: View {
     let winnerName: String
     let onDismiss: () -> Void
     @State private var showBottomSheet = false
-    
+    @State private var showScores = false
+
+    private var glassBackground: some View {
+        ZStack {
+            UnevenRoundedRectangle(
+                topLeadingRadius: 28,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: 28
+            )
+            .fill(.ultraThinMaterial)
+
+            UnevenRoundedRectangle(
+                topLeadingRadius: 28,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: 28
+            )
+            .fill(
+                LinearGradient(
+                    colors: [Color.white.opacity(0.18), Color.white.opacity(0.06)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+        }
+    }
+
     var body: some View {
         ZStack(alignment: .bottom) {
             // Fullscreen video background
             LoopingVideoPlayer(videoName: "farklemaster", videoType: "mp4")
                 .ignoresSafeArea()
 
-            // Bottom sheet
-            if showBottomSheet {
+            // Main bottom sheet
+            if showBottomSheet && !showScores {
                 VStack(spacing: 24) {
                     Text("\(winnerName) is the Farkle Master!")
                         .font(.custom("Daydream", size: 28))
@@ -45,41 +72,88 @@ struct CelebrationView: View {
                             .cornerRadius(3)
                     }
                     .padding(.horizontal, 24)
+
+                    Button(action: {
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                            showScores = true
+                        }
+                    }) {
+                        Text("View scores")
+                            .font(.custom("Daydream", size: 16))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
                 }
                 .padding(.top, 28)
                 .padding(.bottom, 48)
                 .frame(maxWidth: .infinity)
-                .background(
-                    ZStack {
-                        // Frosted glass base
-                        UnevenRoundedRectangle(
-                            topLeadingRadius: 28,
-                            bottomLeadingRadius: 0,
-                            bottomTrailingRadius: 0,
-                            topTrailingRadius: 28
-                        )
-                        .fill(.ultraThinMaterial)
+                .background(glassBackground)
+                .ignoresSafeArea(edges: .bottom)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
 
-                        // Liquid tint overlay
-                        UnevenRoundedRectangle(
-                            topLeadingRadius: 28,
-                            bottomLeadingRadius: 0,
-                            bottomTrailingRadius: 0,
-                            topTrailingRadius: 28
-                        )
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(0.18),
-                                    Color.white.opacity(0.06)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
+            // Scores sheet
+            if showScores {
+                VStack(spacing: 0) {
+                    // Header
+                    HStack {
+                        Button(action: {
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                                showScores = false
+                            }
+                        }) {
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.8))
+                        }
 
+                        Spacer()
+
+                        Text("Final Scores")
+                            .font(.custom("Daydream", size: 18))
+                            .foregroundColor(.white)
+
+                        Spacer()
+
+                        // Balance the chevron
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.clear)
                     }
-                )
+                    .padding(.horizontal, 24)
+                    .padding(.top, 28)
+                    .padding(.bottom, 16)
+
+                    Divider()
+                        .background(Color.white.opacity(0.2))
+                        .padding(.horizontal, 24)
+
+                    // Player rows sorted by score descending
+                    VStack(spacing: 0) {
+                        ForEach(gameState.players.sorted { $0.score > $1.score }) { player in
+                            HStack {
+                                Text(player.name)
+                                    .font(.custom("Daydream", size: 16))
+                                    .foregroundColor(player.name == winnerName ? Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0) : .white)
+                                Spacer()
+                                Text("\(player.score)")
+                                    .font(.custom("Daydream", size: 16))
+                                    .foregroundColor(player.name == winnerName ? Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0) : .white)
+                            }
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 14)
+
+                            if player.id != gameState.players.sorted { $0.score > $1.score }.last?.id {
+                                Divider()
+                                    .background(Color.white.opacity(0.1))
+                                    .padding(.horizontal, 24)
+                            }
+                        }
+                    }
+                    .padding(.top, 8)
+                    .padding(.bottom, 48)
+                }
+                .frame(maxWidth: .infinity)
+                .background(glassBackground)
                 .ignoresSafeArea(edges: .bottom)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
