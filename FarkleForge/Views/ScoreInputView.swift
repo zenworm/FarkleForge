@@ -117,7 +117,7 @@ struct ScoreInputView: View {
             }
         }
         .padding()
-        .background(containerColor)
+        // .background(containerColor)
     }
     
     private func appendNumber(_ number: String) {

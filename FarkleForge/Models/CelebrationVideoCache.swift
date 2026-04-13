@@ -28,11 +28,10 @@ class CelebrationVideoCache {
 
     private func loadAssets() {
         var urls: [URL] = []
-        var index = 1
 
-        while true {
+        for index in 1..<100 {
             let name = String(format: "\(assetPrefix)%03d", index)
-            guard let dataAsset = NSDataAsset(name: name) else { break }
+            guard let dataAsset = NSDataAsset(name: name) else { continue }
 
             let tempFile = FileManager.default.temporaryDirectory
                 .appendingPathComponent("\(name).\(fileExtension)")
@@ -46,27 +45,27 @@ class CelebrationVideoCache {
             } catch {
                 // Asset found but write failed — skip it and keep probing
             }
-
-            index += 1
         }
 
         // Already on queue — assign directly, no dispatch needed
         cachedURLs = urls
     }
 
-    /// Returns a random cached URL, never repeating the last one used (unless only one video exists).
-    func pickRandom() -> URL? {
+    /// Picks a random video for the new game (no repeat from last game).
+    /// Returns the pre-cached URL and the asset name, which matches the corresponding image asset.
+    func selectForNewGame() -> (url: URL?, name: String?) {
         var snapshot: [URL] = []
         queue.sync { snapshot = cachedURLs }
 
         let valid = snapshot.filter { FileManager.default.fileExists(atPath: $0.path) }
-        guard !valid.isEmpty else { return nil }
+        guard !valid.isEmpty else { return (nil, nil) }
 
         let pool = valid.count > 1 ? valid.filter { $0.path != lastUsedPath } : valid
-        guard let picked = pool.randomElement() else { return nil }
+        guard let picked = pool.randomElement() else { return (nil, nil) }
 
         lastUsedPath = picked.path
-        return picked
+        let name = picked.deletingPathExtension().lastPathComponent + "_bg"
+        return (picked, name)
     }
 
     deinit {

@@ -15,7 +15,8 @@ struct ContentView: View {
     @State private var showingGameSetup = false
     @State private var showingResetAlert = false
     @State private var showingCelebration = false
-    @State private var celebrationVideoURL: URL? = nil
+    @State private var gameVideoURL: URL? = nil
+    @State private var gameImageName: String? = nil
     
     var body: some View {
         Group {
@@ -48,13 +49,14 @@ struct ContentView: View {
                         } message: {
                             Text("This will remove all players and reset the game. Are you sure?")
                         }
-                        .onChange(of: gameState.winner) { oldValue, newValue in
+                        .onChange(of: gameState.winner) { _, newValue in
                             if newValue != nil {
-                                celebrationVideoURL = videoCache.pickRandom()
                                 showingCelebration = true
                             }
                         }
-                        .fullScreenCover(isPresented: $showingCelebration) {
+                        .fullScreenCover(isPresented: $showingCelebration, onDismiss: {
+                            gameState.resetScores()
+                        }) {
                             celebrationOverlay
                         }
                 }
@@ -111,6 +113,22 @@ struct ContentView: View {
                 gameState.advanceTurn()
             }
         }
+        .background {
+            if let name = gameImageName {
+                Image(name)
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                    .opacity(0.15)
+            }
+        }
+        .onAppear {
+            if gameImageName == nil {
+                let selection = videoCache.selectForNewGame()
+                gameVideoURL = selection.url
+                gameImageName = selection.name
+            }
+        }
     }
     
     @ToolbarContentBuilder
@@ -154,7 +172,10 @@ struct ContentView: View {
                 .ignoresSafeArea()
             
             if let winner = gameState.winner {
-                CelebrationView(winnerName: winner.name, videoURL: celebrationVideoURL) {
+                CelebrationView(winnerName: winner.name, videoURL: gameVideoURL) {
+                    let selection = videoCache.selectForNewGame()
+                    gameVideoURL = selection.url
+                    gameImageName = selection.name
                     showingCelebration = false
                 }
             }

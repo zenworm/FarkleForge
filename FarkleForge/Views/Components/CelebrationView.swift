@@ -16,6 +16,7 @@ struct CelebrationView: View {
     let onDismiss: () -> Void
     @State private var showBottomSheet = false
     @State private var showScores = false
+    @State private var videoOffset: CGFloat = 0
 
     private var glassBackground: some View {
         ZStack {
@@ -45,9 +46,29 @@ struct CelebrationView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Fullscreen video background
+            // Background image behind video
+            Image("celebrationbg")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+
+            // Fullscreen video background, shifts up when bottom sheet appears
+            // Gradient mask fades the video at the bottom, revealing the bg image beneath
             LoopingVideoPlayer(url: videoURL)
                 .ignoresSafeArea()
+                .mask(
+                    LinearGradient(
+                        stops: [
+                            .init(color: .black, location: 0),
+                            .init(color: .black, location: 0.75),
+                            .init(color: .clear, location: 1.0)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .offset(y: videoOffset)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8), value: videoOffset)
 
             // Main bottom sheet
             if showBottomSheet && !showScores {
@@ -60,7 +81,7 @@ struct CelebrationView: View {
                         .padding(.horizontal, 24)
 
                     Button(action: {
-                        gameState.resetScores()
+                        videoOffset = 0
                         onDismiss()
                     }) {
                         Text("Let's Farkle again")
@@ -161,10 +182,10 @@ struct CelebrationView: View {
         }
         .ignoresSafeArea()
         .onAppear {
-            // Show bottom sheet after 2 seconds
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                     showBottomSheet = true
+                    videoOffset = -200
                 }
             }
         }
@@ -217,39 +238,7 @@ class LoopingVideoPlayerView: UIView {
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        // Make sure layer fills entire screen, including under status bar
-        if let layer = playerLayer, let window = window {
-            let windowBounds = window.bounds
-            
-            // Get view's frame in window coordinates
-            let viewFrameInWindow = convert(bounds, to: window)
-            
-            // Calculate offset to position layer at window origin (0,0)
-            let offsetX = -viewFrameInWindow.origin.x
-            let offsetY = -viewFrameInWindow.origin.y
-            
-            // Set layer frame to cover entire window
-            layer.frame = CGRect(
-                x: offsetX,
-                y: offsetY,
-                width: windowBounds.width,
-                height: windowBounds.height
-            )
-            
-            #if DEBUG
-            print("📐 Video layer frame: \(layer.frame)")
-            print("📐 View bounds: \(bounds)")
-            print("📐 View frame in window: \(viewFrameInWindow)")
-            print("📐 Window bounds: \(windowBounds)")
-            #endif
-        } else if let layer = playerLayer {
-            // Fallback: use screen bounds
-            let screenBounds = UIScreen.main.bounds
-            layer.frame = screenBounds
-            #if DEBUG
-            print("📐 Video layer frame (fallback to screen): \(screenBounds)")
-            #endif
-        }
+        playerLayer?.frame = bounds
     }
     
     override func didMoveToWindow() {
@@ -301,15 +290,9 @@ class LoopingVideoPlayerView: UIView {
         guard let layer = playerLayer else { return }
 
         layer.videoGravity = .resizeAspectFill
-        if let window = window {
-            layer.frame = window.bounds
-        } else {
-            layer.frame = UIScreen.main.bounds
-        }
+        layer.frame = bounds
         layer.backgroundColor = UIColor.black.cgColor
         self.layer.addSublayer(layer)
-        layer.masksToBounds = false
-        self.layer.masksToBounds = false
 
         // Observe player item status
         playerItem?.addObserver(self, forKeyPath: "status", options: [.new], context: nil)
