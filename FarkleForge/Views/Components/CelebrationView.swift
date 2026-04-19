@@ -17,6 +17,7 @@ struct CelebrationView: View {
     @State private var showBottomSheet = false
     @State private var showScores = false
     @State private var videoOffset: CGFloat = 0
+    @State private var maskProgress: CGFloat = 0
 
     private var glassBackground: some View {
         ZStack {
@@ -60,8 +61,8 @@ struct CelebrationView: View {
                     LinearGradient(
                         stops: [
                             .init(color: .black, location: 0),
-                            .init(color: .black, location: 0.75),
-                            .init(color: .clear, location: 1.0)
+                            .init(color: .black, location: 0.85),
+                            .init(color: .black.opacity(1.0 - maskProgress), location: 1.0)
                         ],
                         startPoint: .top,
                         endPoint: .bottom
@@ -110,6 +111,7 @@ struct CelebrationView: View {
                 .frame(maxWidth: .infinity)
                 .background(glassBackground)
                 .ignoresSafeArea(edges: .bottom)
+                // .opacity(0)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
@@ -186,6 +188,7 @@ struct CelebrationView: View {
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                     showBottomSheet = true
                     videoOffset = -200
+                    maskProgress = 1
                 }
             }
         }

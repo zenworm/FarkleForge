@@ -49,7 +49,7 @@ struct ScoreInputView: View {
                     .padding(.horizontal)
             }
             .frame(height: 72)
-            .background(containerColor)
+            // .background(containerColor)
             .cornerRadius(12)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentInput.isEmpty)
             
