@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var showingPlayerList = false
     @State private var showingGameSetup = false
     @State private var showingResetAlert = false
+    @State private var showingRulesSheet = false
     @State private var showingCelebration = false
     @State private var gameVideoURL: URL? = nil
     @State private var gameImageName: String? = nil
@@ -39,6 +40,9 @@ struct ContentView: View {
                         }
                         .sheet(isPresented: $showingPlayerList) {
                             PlayerListView()
+                        }
+                        .sheet(isPresented: $showingRulesSheet) {
+                            FarkleRulesView()
                         }
                         .alert("Start over", isPresented: $showingResetAlert) {
                             Button("Cancel", role: .cancel) { }
@@ -158,6 +162,9 @@ struct ContentView: View {
                     Button(role: .destructive, action: { showingResetAlert = true }) {
                         Label("Start over", systemImage: "arrow.counterclockwise")
                     }
+                }
+                Button(action: { showingRulesSheet = true }) {
+                    Label("Farkle rules", systemImage: "book")
                 }
             } label: {
                 Image(systemName: "ellipsis.circle")

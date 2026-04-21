@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		67BAFBE92F954423009E28C2 /* FarkleRulesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67BAFBE82F954423009E28C2 /* FarkleRulesView.swift */; };
 		67EC512F2F74BDBE002BF1D3 /* CelebrationVideoCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67EC512E2F74BDBE002BF1D3 /* CelebrationVideoCache.swift */; };
 		FA0001 /* FarkleScoreTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000 /* FarkleScoreTrackerApp.swift */; };
 		FA0003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002 /* ContentView.swift */; };
@@ -24,6 +25,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		67BAFBE82F954423009E28C2 /* FarkleRulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarkleRulesView.swift; sourceTree = "<group>"; };
 		67EC512E2F74BDBE002BF1D3 /* CelebrationVideoCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CelebrationVideoCache.swift; sourceTree = "<group>"; };
 		FA0000 /* FarkleScoreTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarkleScoreTrackerApp.swift; sourceTree = "<group>"; };
 		FA0002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -71,6 +73,7 @@
 		FA0007 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				67BAFBE82F954423009E28C2 /* FarkleRulesView.swift */,
 				FA0002 /* ContentView.swift */,
 				FA0011A /* ScoreInputView.swift */,
 				FA0012A /* PlayerListView.swift */,
@@ -193,6 +196,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FA0003 /* ContentView.swift in Sources */,
+				67BAFBE92F954423009E28C2 /* FarkleRulesView.swift in Sources */,
 				FA0001 /* FarkleScoreTrackerApp.swift in Sources */,
 				FA0010 /* Player.swift in Sources */,
 				FA0011 /* GameState.swift in Sources */,
@@ -340,14 +344,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = EQUJPV6RFL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = FarkleForge/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "What The Farkle";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.dice-games";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -356,7 +360,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zenworm.FarkleForge;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -375,14 +379,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = EQUJPV6RFL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = FarkleForge/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "What The Farkle";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.dice-games";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -391,7 +395,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zenworm.FarkleForge;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

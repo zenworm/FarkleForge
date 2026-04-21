@@ -106,11 +106,11 @@ struct ScoreInputView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 60)
                         .background(containerColor)
-                        .foregroundColor(currentInput.isEmpty ? .gray : bankColor)
+                        .foregroundColor(currentInput.isEmpty ? Color(red: 195/255.0, green: 215/255.0, blue: 190/255.0).opacity(0.30) : bankColor)
                         .cornerRadius(3)
                         .overlay(
                             RoundedRectangle(cornerRadius: 3)
-                            .stroke(currentInput.isEmpty ? .gray : bankColor, lineWidth: 2)
+                            .stroke(currentInput.isEmpty ? Color(red: 195/255.0, green: 215/255.0, blue: 190/255.0).opacity(0.30) : bankColor, lineWidth: 2)
                         )
                 }
                 .disabled(currentInput.isEmpty)
