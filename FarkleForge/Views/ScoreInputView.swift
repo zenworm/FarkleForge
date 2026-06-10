@@ -12,10 +12,9 @@ struct ScoreInputView: View {
     let onSubmit: (Int) -> Void
     let onFarkle: () -> Void
     
-    // Dark green background color #1B2918
-    private let containerColor = Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0)
-    private let farkleColor = Color(red: 255/255.0, green: 80/255.0, blue: 80/255.0) // #FF5050
-    private let bankColor = Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0) // #60C946
+    private let farkleTint = Color(red: 142/255.0, green: 43/255.0, blue: 22/255.0) // #8E2B16
+    private let bankTint = Color(red: 24/255.0, green: 160/255.0, blue: 46/255.0) // #18A02E
+    private let accentGreen = Color(red: 163/255.0, green: 234/255.0, blue: 146/255.0) // #A3EA92
     
     private let columns = [
         GridItem(.flexible()),
@@ -42,8 +41,8 @@ struct ScoreInputView: View {
                 
                 // Numbers on the right
                 Text(currentInput.isEmpty ? "" : currentInput)
-                    .font(.custom("Daydream", size: 32))
-                    .foregroundColor(bankColor)
+                    .font(.custom("GeistMono-Bold", size: 32))
+                    .foregroundColor(accentGreen)
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
                     .padding(.horizontal)
@@ -65,59 +64,48 @@ struct ScoreInputView: View {
                 
                 CalculatorButton(
                     title: "00",
-                    foregroundColor: Color(red: 163/255.0, green: 234/255.0, blue: 146/255.0) // #A3EA92
+                    foregroundColor: accentGreen
                 ) {
                     appendShortcut("00")
                 }
-                
+
                 CalculatorButton(
                     title: "0",
                 ) {
                     appendNumber("0")
                 }
-                
+
                 CalculatorButton(
                     title: "50",
-                    foregroundColor: Color(red: 163/255.0, green: 234/255.0, blue: 146/255.0) // #A3EA92
+                    foregroundColor: accentGreen
                 ) {
                     appendShortcut("50")
                 }
             }
-            
+
             // Action buttons
             HStack(spacing: 12) {
                 Button(action: farkle) {
                     Text("Farkle")
-                        .font(.custom("Daydream", size: 20))
+                        .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 60)
-                        .background(containerColor)
-                        .foregroundColor(farkleColor)
-                        .cornerRadius(3)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 3)
-                            .stroke(farkleColor, lineWidth: 2)
-                        )
+                        .frame(height: 36)
                 }
-                
+                .buttonStyle(.glassProminent)
+                .tint(farkleTint)
+
                 Button(action: submitScore) {
                     Text("Bank")
-                        .font(.custom("Daydream", size: 20))
+                        .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 60)
-                        .background(containerColor)
-                        .foregroundColor(currentInput.isEmpty ? Color(red: 195/255.0, green: 215/255.0, blue: 190/255.0).opacity(0.30) : bankColor)
-                        .cornerRadius(3)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 3)
-                            .stroke(currentInput.isEmpty ? Color(red: 195/255.0, green: 215/255.0, blue: 190/255.0).opacity(0.30) : bankColor, lineWidth: 2)
-                        )
+                        .frame(height: 36)
                 }
+                .buttonStyle(.glassProminent)
+                .tint(bankTint)
                 .disabled(currentInput.isEmpty)
             }
         }
         .padding()
-        // .background(containerColor)
     }
     
     private func appendNumber(_ number: String) {

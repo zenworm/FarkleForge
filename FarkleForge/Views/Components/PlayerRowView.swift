@@ -37,9 +37,25 @@ struct PlayerRowView: View {
     
     var progressBarColor: Color {
         if isCurrentTurn {
-            return Color(red: 33/255.0, green: 204/255.0, blue: 38/255.0) // #21CC26
+            return Color(red: 96/255.0, green: 191/255.0, blue: 72/255.0) // #60BF48
         } else {
-            return Color(red: 159/255.0, green: 255/255.0, blue: 161/255.0).opacity(0.12) // #9FFFA1 at 12%
+            return Color(red: 145/255.0, green: 218/255.0, blue: 127/255.0).opacity(0.6) // #91DA7F at 60%
+        }
+    }
+
+    private var nameColor: Color {
+        if isCurrentTurn {
+            return Color(red: 22/255.0, green: 34/255.0, blue: 19/255.0) // #162213
+        } else {
+            return Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0).opacity(0.75) // #1B2918 at 75%
+        }
+    }
+
+    private var scoreColor: Color {
+        if isCurrentTurn {
+            return Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0) // #1B2918
+        } else {
+            return Color(red: 145/255.0, green: 218/255.0, blue: 127/255.0) // #91DA7F
         }
     }
     
@@ -58,7 +74,7 @@ struct PlayerRowView: View {
         ZStack(alignment: .leading) {
             // Background container
             shape
-                .fill(isCurrentTurn ? Color(red: 120/255.0, green: 220/255.0, blue: 115/255.0) : Color.clear) // #78DC73 or transparent
+                .fill(isCurrentTurn ? Color(red: 185/255.0, green: 239/255.0, blue: 168/255.0) : Color.clear) // #B9EFA8 or transparent
             
             // Progress bar (full bleed on left, top, bottom)
             GeometryReader { geometry in
@@ -72,29 +88,25 @@ struct PlayerRowView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text(player.name)
-                        .font(.custom("Daydream", size: 20))
-                        .foregroundColor(isCurrentTurn ? Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0) : Color(red: 145/255.0, green: 218/255.0, blue: 127/255.0))
-                    
+                        .font(.custom("JetBrainsMono-Medium", size: 20))
+                        .foregroundColor(nameColor)
+
                     Spacer()
-                    
+
                     Text("\(player.score)")
-                        .font(.custom("Daydream", size: 20))
-                        .foregroundColor(isCurrentTurn ? Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0) : Color(red: 145/255.0, green: 218/255.0, blue: 127/255.0))
+                        .font(.custom("GeistMono-Bold", size: 20))
+                        .foregroundColor(scoreColor)
                 }
-                
+
                 if let pointsNeeded = pointsNeeded, isCurrentTurn {
                     Text("\(pointsNeeded) to win")
-                        .font(.custom("Daydream", size: 12))
-                        .foregroundColor(.black)
+                        .font(.custom("JetBrainsMono-Regular", size: 12))
+                        .foregroundColor(nameColor)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                 }
             }
             .padding()
         }
-        .overlay(
-            shape
-                .stroke(isCurrentTurn ? Color(red: 188/255.0, green: 249/255.0, blue: 172/255.0).opacity(0.5) : Color(red: 145/255.0, green: 218/255.0, blue: 127/255.0).opacity(0.3), lineWidth: 2)
-        )
         .clipShape(shape)
     }
 }

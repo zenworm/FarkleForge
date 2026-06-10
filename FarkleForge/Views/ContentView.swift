@@ -106,8 +106,6 @@ struct ContentView: View {
                 }
             }
             
-            Divider()
-            
             ScoreInputView(currentInput: $currentInput) { score in
                 if let currentPlayer = gameState.currentPlayer {
                     gameState.applyBankedScore(score, to: currentPlayer.id)
@@ -123,7 +121,6 @@ struct ContentView: View {
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
-                    .opacity(0.15)
             }
         }
         .onAppear {
@@ -142,7 +139,7 @@ struct ContentView: View {
                 .font(.custom("Daydream", size: 16))
                 .fontWeight(.bold)
         }
-        
+
         ToolbarItem(placement: .navigationBarLeading) {
             if !gameState.players.isEmpty {
                 Button(action: {
@@ -155,7 +152,7 @@ struct ContentView: View {
                 .opacity(gameState.canUndoLastScoreEntry ? 1.0 : 0.35)
             }
         }
-        
+
         ToolbarItem(placement: .navigationBarTrailing) {
             Menu {
                 if !gameState.players.isEmpty {
@@ -171,7 +168,7 @@ struct ContentView: View {
             }
         }
     }
-    
+
     @ViewBuilder
     private var celebrationOverlay: some View {
         ZStack {
