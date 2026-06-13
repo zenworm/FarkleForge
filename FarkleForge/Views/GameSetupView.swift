@@ -11,11 +11,11 @@ struct GameSetupView: View {
     @Environment(GameState.self) private var gameState
     @Environment(\.dismiss) private var dismiss
     @State private var selectedPlayerCount: Int = 2
-    @State private var showingAddPlayers = false
-    @State private var playerNames: [String] = []
+    @State private var playerNames: [String] = Array(repeating: "", count: 2)
     
     private let bankColor = Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0) // #60C946
     private let containerColor = Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0) // #1B2918
+    private let accentGreen = Color(red: 163/255.0, green: 234/255.0, blue: 146/255.0) // #A3EA92
     private let playerCounts = [2, 3, 4, 5, 6, 7, 8]
     private let columns = [
         GridItem(.flexible()),
@@ -29,12 +29,8 @@ struct GameSetupView: View {
             ZStack {
                 Color.black
                     .ignoresSafeArea()
-                
-                if showingAddPlayers {
-                    addPlayersView
-                } else {
-                    setupView
-                }
+
+                setupView
             }
             .onChange(of: gameState.players.count) { oldValue, newValue in
                 // Auto-dismiss when players are added
@@ -46,43 +42,13 @@ struct GameSetupView: View {
     }
     
     private var setupView: some View {
-        VStack {
-            Spacer()
-            
-            VStack(spacing: 30) {
-                // Player count selection
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Number of Players")
-                        .font(.custom("Daydream", size: 20))
-                        .fontWeight(.bold)
-                    
-                    LazyVGrid(columns: columns, spacing: 8) {
-                        ForEach(playerCounts, id: \.self) { count in
-                            Button(action: {
-                                selectedPlayerCount = count
-                            }) {
-                                Text("\(count)")
-                                    .font(.custom("Daydream", size: 24))
-                                    .fontWeight(.bold)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 60)
-                                    .foregroundColor(selectedPlayerCount == count ? Color.black : Color.gray)
-                                    .background(selectedPlayerCount == count ? bankColor : Color.clear)
-                                    .cornerRadius(3)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 3)
-                                            .stroke(selectedPlayerCount == count ? bankColor : Color.gray, lineWidth: 2)
-                                    )
-                            }
-                        }
-                    }
-                }
-                .padding()
-                
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: 30) {
                 // Game length toggle
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("Game Length")
-                        .font(.custom("Daydream", size: 20))
+                    Text("How many points to win?")
+                        .font(.custom("JetBrainsMono-Medium", size: 20))
                         .fontWeight(.bold)
                     
                     HStack(spacing: 0) {
@@ -95,7 +61,7 @@ struct GameSetupView: View {
                                 gameState.targetScore = score
                             }) {
                                 Text(score == 2500 ? "2,500" : score == 5000 ? "5,000" : "10,000")
-                                    .font(.custom("Daydream", size: 18))
+                                    .font(.custom("GeistMono-Regular", size: 24))
                                     .fontWeight(.bold)
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 50)
@@ -120,47 +86,47 @@ struct GameSetupView: View {
                                     )
                             }
                         }
-                    } 
-                }
-                .padding()
-                
-                Spacer()
-                
-                // Continue button
-                Button(action: {
-                    // Initialize array synchronously before animation
-                    playerNames = Array(repeating: "", count: selectedPlayerCount)
-                    withAnimation {
-                        showingAddPlayers = true
                     }
-                }) {
-                    Text("Let's Farkle!")
-                        .font(.custom("Daydream", size: 20))
-                        .fontWeight(.bold)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .foregroundColor(bankColor)
-                        .cornerRadius(3)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 3)
-                            .stroke(bankColor, lineWidth: 2)
-                        )
                 }
-                .disabled(!gameState.players.isEmpty)
                 .padding()
-            }
-            
-            Spacer()
-        }
-    }
-    
-    private var addPlayersView: some View {
-        VStack(spacing: 0) {
-            ScrollView {
+
+                // Player count selection
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("How many players?")
+                        .font(.custom("JetBrainsMono-Medium", size: 20))
+                        .fontWeight(.bold)
+
+                    LazyVGrid(columns: columns, spacing: 8) {
+                        ForEach(playerCounts, id: \.self) { count in
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    selectedPlayerCount = count
+                                    syncPlayerNames(to: count)
+                                }
+                            }) {
+                                Text("\(count)")
+                                    .font(.custom("GeistMono-Bold", size: 24))
+                                    .fontWeight(.bold)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 60)
+                                    .foregroundColor(selectedPlayerCount == count ? Color.black : Color.gray)
+                                    .background(selectedPlayerCount == count ? bankColor : Color.clear)
+                                    .cornerRadius(3)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 3)
+                                            .stroke(selectedPlayerCount == count ? bankColor : Color.gray, lineWidth: 2)
+                                    )
+                            }
+                        }
+                    }
+                }
+                .padding()
+
+                // Player names
                 VStack(spacing: 16) {
                     ForEach(0..<selectedPlayerCount, id: \.self) { index in
                         TextField("Player \(index + 1)", text: Binding(
-                            get: { 
+                            get: {
                                 guard index < playerNames.count else { return "" }
                                 return playerNames[index]
                             },
@@ -169,44 +135,32 @@ struct GameSetupView: View {
                                 playerNames[index] = newValue
                             }
                         ))
-                        .font(.custom("Daydream", size: 20))
+                        .font(.custom("GeistMono-Bold", size: 24))
                         .textFieldStyle(.roundedBorder)
-                        .padding(.horizontal)
                     }
                 }
-                .padding(.vertical)
-            }
-            .onAppear {
-                // Ensure array is always the correct size when view appears
-                if playerNames.count != selectedPlayerCount {
-                    playerNames = Array(repeating: "", count: selectedPlayerCount)
+                .padding([.horizontal, .bottom])
                 }
             }
-            
+
             Button(action: finishSetup) {
-                Text("Start Game")
-                    .font(.custom("Daydream", size: 20))
-                    .fontWeight(.bold)
+                Text("Let's Farkle!")
+                    .font(.custom("GeistMono-Bold", size: 24))
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .foregroundColor(canStartGame ? bankColor : .gray)
-                    .cornerRadius(3)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 3)
-                            .stroke(canStartGame ? bankColor : .gray, lineWidth: 2)
-                    )
             }
-            .disabled(!canStartGame)
+            .disabled(!canStartGame || !gameState.players.isEmpty)
+            .buttonStyle(.glass)
+            .tint(accentGreen)
             .padding()
         }
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button("Back") {
-                    withAnimation {
-                        showingAddPlayers = false
-                    }
-                }
-            }
+    }
+
+    private func syncPlayerNames(to count: Int) {
+        if playerNames.count < count {
+            playerNames.append(contentsOf: Array(repeating: "", count: count - playerNames.count))
+        } else if playerNames.count > count {
+            playerNames.removeLast(playerNames.count - count)
         }
     }
     

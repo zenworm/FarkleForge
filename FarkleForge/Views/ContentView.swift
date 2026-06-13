@@ -12,7 +12,7 @@ struct ContentView: View {
     @Environment(\.videoCache) private var videoCache
     @State private var currentInput = ""
     @State private var showingPlayerList = false
-    @State private var showingGameSetup = false
+    @State private var showingGameSetup = true // TEMP: auto-open setup sheet for preview
     @State private var showingResetAlert = false
     @State private var showingRulesSheet = false
     @State private var showingCelebration = false

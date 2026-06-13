@@ -24,31 +24,30 @@ struct ScoreInputView: View {
     var body: some View {
         VStack(spacing: 12) {
             // Display current input
-            HStack {
-                // Reset button on the left (only shown when there's input)
-                if !currentInput.isEmpty {
-                    Button(action: clear) {
-                        Image(systemName: "xmark")
-                            .font(.title2)
-                            .foregroundColor(.red)
-                            .padding(.horizontal, 16)
-                    }
-                    .transition(.scale.combined(with: .opacity))
-                }
-                
-                Spacer()
-                
-                // Numbers on the right
+            ZStack {
+                // Numbers centered
                 Text(currentInput.isEmpty ? "" : currentInput)
-                    .font(.custom("GeistMono-Bold", size: 32))
+                    .font(.custom("GeistMono-Regular", size: 34))
                     .foregroundColor(accentGreen)
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
-                    .padding(.horizontal)
+                    .padding(.horizontal, 60) // keep clear of the reset button
+
+                // Reset button pinned to the left (only shown when there's input)
+                if !currentInput.isEmpty {
+                    HStack {
+                        Button(action: clear) {
+                            Image(systemName: "xmark")
+                                .font(.title2)
+                                .foregroundColor(.red)
+                                .padding(.horizontal, 16)
+                        }
+                        Spacer()
+                    }
+                    .transition(.scale.combined(with: .opacity))
+                }
             }
             .frame(height: 72)
-            // .background(containerColor)
-            .cornerRadius(12)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentInput.isEmpty)
             
             // Number pad
@@ -104,7 +103,7 @@ struct ScoreInputView: View {
                 .disabled(currentInput.isEmpty)
             }
         }
-        .padding()
+        .padding([.horizontal, .bottom])
     }
     
     private func appendNumber(_ number: String) {
