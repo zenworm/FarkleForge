@@ -94,12 +94,18 @@ struct ContentView: View {
                         .padding(.vertical, geometry.size.height / 2)
                     }
                     .scrollIndicators(.hidden)
+                    .scrollClipDisabled()
                     .mask {
                         VStack(spacing: 0) {
+                            // Long fade from the very top of the screen so rows
+                            // dissolve as they scroll up behind the header
+                            LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                                .frame(height: 110)
                             Rectangle()
                             LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
                                 .frame(height: 32)
                         }
+                        .ignoresSafeArea(edges: .top)
                     }
                 }
                 .onChange(of: gameState.currentTurnIndex) { oldValue, newValue in
