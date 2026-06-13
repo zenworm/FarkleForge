@@ -45,9 +45,9 @@ struct ContentView: View {
                         .sheet(isPresented: $showingRulesSheet) {
                             FarkleRulesView()
                         }
-                        .alert("Start over", isPresented: $showingResetAlert) {
+                        .alert("New game", isPresented: $showingResetAlert) {
                             Button("Cancel", role: .cancel) { }
-                            Button("Reset", role: .destructive) {
+                            Button("New game", role: .destructive) {
                                 gameState.resetGame()
                                 currentInput = ""
                             }
@@ -72,22 +72,35 @@ struct ContentView: View {
     private var gameInProgressView: some View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(spacing: 8) {
-                        ForEach(Array(gameState.players.enumerated()), id: \.element.id) { index, player in
-                            PlayerRowView(
-                                player: player,
-                                isCurrentTurn: player.id == gameState.currentPlayer?.id,
-                                isFinalRound: gameState.isFinalRound,
-                                leaderScore: gameState.leaderScore,
-                                targetScore: gameState.targetScore,
-                                isFirst: index == 0,
-                                isLast: index == gameState.players.count - 1
-                            )
-                            .id(player.id)
+                GeometryReader { geometry in
+                    ScrollView {
+                        VStack(spacing: 8) {
+                            ForEach(Array(gameState.players.enumerated()), id: \.element.id) { index, player in
+                                PlayerRowView(
+                                    player: player,
+                                    isCurrentTurn: player.id == gameState.currentPlayer?.id,
+                                    isFinalRound: gameState.isFinalRound,
+                                    leaderScore: gameState.leaderScore,
+                                    targetScore: gameState.targetScore,
+                                    isFirst: index == 0,
+                                    isLast: index == gameState.players.count - 1
+                                )
+                                .id(player.id)
+                            }
+                        }
+                        .padding(.horizontal)
+                        // Half a viewport of headroom on each end so any row,
+                        // including the first and last, can scroll to exact center
+                        .padding(.vertical, geometry.size.height / 2)
+                    }
+                    .scrollIndicators(.hidden)
+                    .mask {
+                        VStack(spacing: 0) {
+                            Rectangle()
+                            LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
+                                .frame(height: 32)
                         }
                     }
-                    .padding()
                 }
                 .onChange(of: gameState.currentTurnIndex) { oldValue, newValue in
                     if let currentPlayer = gameState.currentPlayer {
@@ -99,9 +112,7 @@ struct ContentView: View {
                 .onAppear {
                     if let currentPlayer = gameState.currentPlayer {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                proxy.scrollTo(currentPlayer.id, anchor: .center)
-                            }
+                            proxy.scrollTo(currentPlayer.id, anchor: .center)
                         }
                     }
                 }
@@ -166,7 +177,7 @@ struct ContentView: View {
             Menu {
                 if !gameState.players.isEmpty {
                     Button(role: .destructive, action: { showingResetAlert = true }) {
-                        Label("Start over", systemImage: "arrow.counterclockwise")
+                        Label("New game", systemImage: "arrow.counterclockwise")
                     }
                 }
                 Button(action: { showingRulesSheet = true }) {
