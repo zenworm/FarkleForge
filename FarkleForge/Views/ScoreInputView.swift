@@ -12,8 +12,7 @@ struct ScoreInputView: View {
     let onSubmit: (Int) -> Void
     let onFarkle: () -> Void
     
-    private let farkleTint = Color(red: 142/255.0, green: 43/255.0, blue: 22/255.0) // #8E2B16
-    private let bankTint = Color(red: 24/255.0, green: 160/255.0, blue: 46/255.0) // #18A02E
+    private let farkleTint = Color(red: 255/255.0, green: 105/255.0, blue: 80/255.0) // #FF6950
     private let accentGreen = Color(red: 163/255.0, green: 234/255.0, blue: 146/255.0) // #A3EA92
     
     private let columns = [
@@ -91,7 +90,7 @@ struct ScoreInputView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 36)
                 }
-                .buttonStyle(.glassProminent)
+                .buttonStyle(.glass)
                 .tint(farkleTint)
 
                 Button(action: submitScore) {
@@ -100,8 +99,8 @@ struct ScoreInputView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 36)
                 }
-                .buttonStyle(.glassProminent)
-                .tint(bankTint)
+                .buttonStyle(.glass)
+                .tint(accentGreen)
                 .disabled(currentInput.isEmpty)
             }
         }

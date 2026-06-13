@@ -18,6 +18,7 @@ struct ContentView: View {
     @State private var showingCelebration = false
     @State private var gameVideoURL: URL? = nil
     @State private var gameImageName: String? = nil
+    @State private var isBanking = false
     
     var body: some View {
         Group {
@@ -72,7 +73,7 @@ struct ContentView: View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(spacing: 0) {
+                    VStack(spacing: 8) {
                         ForEach(Array(gameState.players.enumerated()), id: \.element.id) { index, player in
                             PlayerRowView(
                                 player: player,
@@ -107,11 +108,19 @@ struct ContentView: View {
             }
             
             ScoreInputView(currentInput: $currentInput) { score in
-                if let currentPlayer = gameState.currentPlayer {
-                    gameState.applyBankedScore(score, to: currentPlayer.id)
-                    currentInput = ""
+                guard !isBanking, let currentPlayer = gameState.currentPlayer else { return }
+                isBanking = true
+                gameState.applyBankedScore(score, to: currentPlayer.id)
+                currentInput = ""
+                // Let the progress bar animation play before the turn moves on
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        gameState.advanceTurn()
+                    }
+                    isBanking = false
                 }
             } onFarkle: {
+                guard !isBanking else { return }
                 gameState.advanceTurn()
             }
         }
@@ -148,8 +157,8 @@ struct ContentView: View {
                 }) {
                     Image(systemName: "arrow.uturn.backward")
                 }
-                .disabled(!gameState.canUndoLastScoreEntry)
-                .opacity(gameState.canUndoLastScoreEntry ? 1.0 : 0.35)
+                .disabled(!gameState.canUndoLastScoreEntry || isBanking)
+                .opacity(gameState.canUndoLastScoreEntry && !isBanking ? 1.0 : 0.35)
             }
         }
 

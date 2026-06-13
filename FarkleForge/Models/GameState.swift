@@ -135,11 +135,12 @@ class GameState {
         clearUndoHistory()
     }
     
-    /// Applies a banked score entry (score + advance turn) and captures an undo snapshot.
+    /// Applies a banked score entry and captures an undo snapshot.
+    /// The caller is responsible for calling advanceTurn() afterwards,
+    /// so the UI can animate the score change before the turn moves on.
     func applyBankedScore(_ points: Int, to playerId: UUID) {
         pushUndoSnapshot()
         addScore(points, to: playerId)
-        advanceTurn()
     }
     
     func addScore(_ points: Int, to playerId: UUID) {

@@ -37,7 +37,7 @@ struct PlayerRowView: View {
     
     var progressBarColor: Color {
         if isCurrentTurn {
-            return Color(red: 96/255.0, green: 191/255.0, blue: 72/255.0) // #60BF48
+            return Color(red: 185/255.0, green: 239/255.0, blue: 168/255.0) // #B9EFA8
         } else {
             return Color(red: 145/255.0, green: 218/255.0, blue: 127/255.0).opacity(0.6) // #91DA7F at 60%
         }
@@ -47,7 +47,7 @@ struct PlayerRowView: View {
         if isCurrentTurn {
             return Color(red: 22/255.0, green: 34/255.0, blue: 19/255.0) // #162213
         } else {
-            return Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0).opacity(0.75) // #1B2918 at 75%
+            return Color.white.opacity(0.8) // #FFFFFF at 80%
         }
     }
 
@@ -59,7 +59,7 @@ struct PlayerRowView: View {
         }
     }
     
-    private var cornerRadius: CGFloat = 4
+    private var cornerRadius: CGFloat = 0
     
     private var shape: UnevenRoundedRectangle {
         UnevenRoundedRectangle(
@@ -74,7 +74,7 @@ struct PlayerRowView: View {
         ZStack(alignment: .leading) {
             // Background container
             shape
-                .fill(isCurrentTurn ? Color(red: 185/255.0, green: 239/255.0, blue: 168/255.0) : Color.clear) // #B9EFA8 or transparent
+                .fill(isCurrentTurn ? Color(red: 96/255.0, green: 191/255.0, blue: 72/255.0) : Color.clear) // #60BF48 or transparent
             
             // Progress bar (full bleed on left, top, bottom)
             GeometryReader { geometry in
@@ -82,6 +82,7 @@ struct PlayerRowView: View {
                     .fill(progressBarColor)
                     .frame(width: geometry.size.width * progress)
                     .frame(maxHeight: .infinity, alignment: .leading)
+                    .animation(.easeOut(duration: 0.6), value: progress)
             }
             
             // Content
