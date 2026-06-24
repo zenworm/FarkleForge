@@ -12,7 +12,7 @@ struct ScoreInputView: View {
     let onSubmit: (Int) -> Void
     let onFarkle: () -> Void
     
-    private let farkleTint = Color(red: 255/255.0, green: 105/255.0, blue: 80/255.0) // #FF6950
+    private let farkleTint = Color(red: 255/255.0, green: 69/255.0, blue: 69/255.0) // #FF4545
     private let accentGreen = Color(red: 163/255.0, green: 234/255.0, blue: 146/255.0) // #A3EA92
     
     private let columns = [
@@ -48,8 +48,9 @@ struct ScoreInputView: View {
                 }
             }
             .frame(height: 72)
+            .padding(.horizontal)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentInput.isEmpty)
-            
+
             // Number pad
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(["7", "8", "9", "4", "5", "6", "1", "2", "3"], id: \.self) { number in
@@ -59,7 +60,7 @@ struct ScoreInputView: View {
                         appendNumber(number)
                     }
                 }
-                
+
                 CalculatorButton(
                     title: "00",
                     foregroundColor: accentGreen
@@ -80,30 +81,48 @@ struct ScoreInputView: View {
                     appendShortcut("50")
                 }
             }
+            .padding(.horizontal)
 
-            // Action buttons
-            HStack(spacing: 12) {
+            // Action bar: full-width glass extending under the bottom safe area
+            HStack(spacing: 0) {
                 Button(action: farkle) {
                     Text("Farkle")
                         .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 36)
+                        .foregroundStyle(farkleTint)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .contentShape(Rectangle())
                 }
-                .buttonStyle(.glass)
-                .tint(farkleTint)
+                .buttonStyle(.plain)
 
                 Button(action: submitScore) {
                     Text("Bank")
                         .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 36)
+                        .foregroundStyle(currentInput.isEmpty ? Color.secondary : accentGreen)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .contentShape(Rectangle())
                 }
-                .buttonStyle(.glass)
-                .tint(accentGreen)
+                .buttonStyle(.plain)
                 .disabled(currentInput.isEmpty)
             }
+            .frame(height: 72)
+            .background {
+                ZStack {
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        .opacity(0.5)
+                    HStack(spacing: 0) {
+                        Rectangle().fill(Color.black.opacity(0.4)).frame(width: 1)
+                        Rectangle().fill(Color.white.opacity(0.2)).frame(width: 1)
+                    }
+                    VStack(spacing: 0) {
+                        Rectangle().fill(Color.white.opacity(0.2)).frame(height: 1)
+                        Spacer(minLength: 0)
+                    }
+                }
+                .ignoresSafeArea(edges: .bottom)
+            }
+            .padding(.top, 8)
         }
-        .padding([.horizontal, .bottom])
     }
     
     private func appendNumber(_ number: String) {
