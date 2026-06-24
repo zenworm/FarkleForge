@@ -12,7 +12,6 @@ struct ContentView: View {
     @Environment(\.videoCache) private var videoCache
     @State private var currentInput = ""
     @State private var showingPlayerList = false
-    @State private var showingGameSetup = true // TEMP: auto-open setup sheet for preview
     @State private var showingResetAlert = false
     @State private var showingRulesSheet = false
     @State private var showingCelebration = false
@@ -23,13 +22,7 @@ struct ContentView: View {
     var body: some View {
         Group {
             if gameState.players.isEmpty {
-                // Splash screen - no navigation
-                SplashView(onStartGame: {
-                    showingGameSetup = true
-                })
-                .sheet(isPresented: $showingGameSetup) {
-                    GameSetupView()
-                }
+                StartGameView()
             } else {
                 // Game view - with navigation
                 NavigationStack {

@@ -22,6 +22,7 @@
 		FA0017 /* PlayerPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0016A /* PlayerPersistence.swift */; };
 		FA0018 /* GameSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0018A /* GameSetupView.swift */; };
 		FA0019 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0019A /* SplashView.swift */; };
+		FA0020 /* StartGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0020A /* StartGameView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +42,7 @@
 		FA0017A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FA0018A /* GameSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameSetupView.swift; sourceTree = "<group>"; };
 		FA0019A /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
+		FA0020A /* StartGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartGameView.swift; sourceTree = "<group>"; };
 		FA9999 /* FarkleForge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FarkleForge.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -78,6 +80,7 @@
 				FA0011A /* ScoreInputView.swift */,
 				FA0012A /* PlayerListView.swift */,
 				FA0018A /* GameSetupView.swift */,
+				FA0020A /* StartGameView.swift */,
 				FA0006 /* Components */,
 			);
 			path = Views;
@@ -208,6 +211,7 @@
 				FA0017 /* PlayerPersistence.swift in Sources */,
 				FA0018 /* GameSetupView.swift in Sources */,
 				FA0019 /* SplashView.swift in Sources */,
+				FA0020 /* StartGameView.swift in Sources */,
 				67EC512F2F74BDBE002BF1D3 /* CelebrationVideoCache.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
