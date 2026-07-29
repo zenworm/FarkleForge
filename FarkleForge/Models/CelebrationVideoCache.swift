@@ -11,6 +11,11 @@ class CelebrationVideoCache {
     private var cachedURLs: [URL] = []
     private var lastUsedPath: String? = nil
 
+    /// A shuffled "deck" of backgrounds still to be shown this cycle. Each new game
+    /// deals one off the top; when it empties, a fresh random order is dealt. This
+    /// guarantees every background is shown once before any repeats.
+    private var shuffleBag: [URL] = []
+
     private let queue = DispatchQueue(label: "com.farkleforge.videocache", qos: .utility)
     private let assetPrefix = "celebration_"
     private let fileExtension = "mp4"
@@ -51,7 +56,8 @@ class CelebrationVideoCache {
         cachedURLs = urls
     }
 
-    /// Picks a random video for the new game (no repeat from last game).
+    /// Deals the next unique background for a new game, cycling through every
+    /// available background (in a fresh random order) before any repeats.
     /// Returns the pre-cached URL and the asset name, which matches the corresponding image asset.
     func selectForNewGame() -> (url: URL?, name: String?) {
         var snapshot: [URL] = []
@@ -60,9 +66,20 @@ class CelebrationVideoCache {
         let valid = snapshot.filter { FileManager.default.fileExists(atPath: $0.path) }
         guard !valid.isEmpty else { return (nil, nil) }
 
-        let pool = valid.count > 1 ? valid.filter { $0.path != lastUsedPath } : valid
-        guard let picked = pool.randomElement() else { return (nil, nil) }
+        // Drop any staged picks whose assets have gone away since the bag was dealt.
+        let validPaths = Set(valid.map { $0.path })
+        shuffleBag.removeAll { !validPaths.contains($0.path) }
 
+        // Bag exhausted (or first run) — deal a fresh, fully shuffled cycle.
+        if shuffleBag.isEmpty {
+            shuffleBag = valid.shuffled()
+            // Don't let a reshuffle repeat the background that just ended the last cycle.
+            if valid.count > 1, shuffleBag.first?.path == lastUsedPath {
+                shuffleBag.append(shuffleBag.removeFirst())
+            }
+        }
+
+        let picked = shuffleBag.removeFirst()
         lastUsedPath = picked.path
         let name = picked.deletingPathExtension().lastPathComponent + "_bg"
         return (picked, name)

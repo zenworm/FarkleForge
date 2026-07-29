@@ -68,6 +68,11 @@ struct ContentView: View {
                 hasPlayedIntro = false
                 introProgress = 0
                 showContent = false
+                // Clear the background so the next game deals a fresh one from the
+                // shuffle bag; ContentView's @State persists across the reset, so
+                // without this the onAppear guard would reuse the previous image.
+                gameVideoURL = nil
+                gameImageName = nil
             }
         }
     }
