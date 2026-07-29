@@ -25,27 +25,33 @@ struct StartGameView: View {
     private static let accentGreen = Color(red: 163/255.0, green: 234/255.0, blue: 146/255.0) // #A3EA92
     private static let startGreen = Color(red: 96/255.0, green: 191/255.0, blue: 72/255.0) // #60BF48 — matches active player / Bank button
     private static let startTextColor = Color(red: 22/255.0, green: 34/255.0, blue: 19/255.0) // #162213 — matches active player text
-    private static let bodyFont = Font.custom("JetBrainsMono-Medium", size: 22)
+    /// The paragraph text scales with the viewport width: 22pt is the reference
+    /// size on a 393pt-wide screen (iPhone 14/15), and it grows/shrinks from there.
+    private func bodyFont(width: CGFloat) -> Font {
+        .custom("JetBrainsMono-Medium", size: 22 * width / 393)
+    }
 
     var body: some View {
-        ZStack(alignment: .top) {
-            VStack(spacing: 28) {
-                Image("wtf")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: 260)
-                    .padding(.top, 40)
+        GeometryReader { geo in
+            ZStack(alignment: .top) {
+                VStack(spacing: 28) {
+                    Image("wtf")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: 260)
+                        .padding(.top, 40)
 
-                paragraph
-                    .padding(.horizontal)
-                    .padding(.top, 24)
+                    paragraph(width: geo.size.width)
+                        .padding(.horizontal)
+                        .padding(.top, 24)
 
-                Spacer(minLength: 0)
-            }
+                    Spacer(minLength: 0)
+                }
 
-            VStack {
-                Spacer()
-                startBar
+                VStack {
+                    Spacer()
+                    startBar
+                }
             }
         }
         .background {
@@ -88,7 +94,7 @@ struct StartGameView: View {
         }
     }
 
-    private var paragraph: some View {
+    private func paragraph(width: CGFloat) -> some View {
         VStack(alignment: .center, spacing: 10) {
             HStack(spacing: 8) {
                 Text("I want to play to")
@@ -105,7 +111,7 @@ struct StartGameView: View {
                 }
             }
         }
-        .font(Self.bodyFont)
+        .font(bodyFont(width: width))
         .foregroundStyle(.white)
         .frame(maxWidth: .infinity, alignment: .center)
     }
@@ -134,6 +140,9 @@ struct StartGameView: View {
             .onSubmit { focusedNameIndex = nil }
             .autocorrectionDisabled()
             .textInputAutocapitalization(.words)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(Color.black.opacity(0.4), in: RoundedRectangle(cornerRadius: 4))
     }
 
     private func tappable(text: String, action: @escaping () -> Void) -> some View {
@@ -141,6 +150,9 @@ struct StartGameView: View {
             Text(text)
                 .foregroundStyle(Self.accentGreen)
                 .underline()
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.black.opacity(0.4), in: RoundedRectangle(cornerRadius: 4))
         }
         .buttonStyle(.plain)
     }
@@ -220,33 +232,25 @@ struct StartGameView: View {
     }
 
     private var scoreSheet: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 12) {
             ForEach([10000, 5000, 2500], id: \.self) { score in
                 Button {
                     localTargetScore = score
                     showingScoreSheet = false
                 } label: {
-                    HStack {
-                        Text(StartGameView.scoreLabel(for: score))
-                            .font(.custom("GeistMono-Regular", size: 24))
-                            .foregroundStyle(.white)
-                        Spacer()
-                        if score == localTargetScore {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(Self.accentGreen)
-                        }
-                    }
-                    .padding(.horizontal)
-                    .frame(height: 56)
-                    .contentShape(Rectangle())
+                    Text(StartGameView.scoreLabel(for: score))
+                        .font(.custom("GeistMono-Bold", size: 24))
+                        .foregroundStyle(localTargetScore == score ? Color.black : .white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 60)
+                        .background(localTargetScore == score ? Self.accentGreen : Color.white.opacity(0.06))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
                 }
                 .buttonStyle(.plain)
-                if score != 2500 {
-                    Divider().opacity(0.3)
-                }
             }
             Spacer(minLength: 0)
         }
+        .padding(.horizontal)
         .padding(.top, 24)
         .presentationDetents([.fraction(0.35)])
         .presentationBackground(Self.backgroundColor)
