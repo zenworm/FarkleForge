@@ -23,6 +23,8 @@ struct StartGameView: View {
 
     private static let backgroundColor = Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0) // #1B2918
     private static let accentGreen = Color(red: 163/255.0, green: 234/255.0, blue: 146/255.0) // #A3EA92
+    private static let startGreen = Color(red: 96/255.0, green: 191/255.0, blue: 72/255.0) // #60BF48 — matches active player / Bank button
+    private static let startTextColor = Color(red: 22/255.0, green: 34/255.0, blue: 19/255.0) // #162213 — matches active player text
     private static let bodyFont = Font.custom("JetBrainsMono-Medium", size: 22)
 
     var body: some View {
@@ -36,6 +38,7 @@ struct StartGameView: View {
 
                 paragraph
                     .padding(.horizontal)
+                    .padding(.top, 24)
 
                 Spacer(minLength: 0)
             }
@@ -86,7 +89,7 @@ struct StartGameView: View {
     }
 
     private var paragraph: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .center, spacing: 10) {
             HStack(spacing: 8) {
                 Text("I want to play to")
                 tappable(text: scoreString) { showingScoreSheet = true }
@@ -104,7 +107,7 @@ struct StartGameView: View {
         }
         .font(Self.bodyFont)
         .foregroundStyle(.white)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     @ViewBuilder
@@ -146,9 +149,30 @@ struct StartGameView: View {
         Binding(
             get: { names.indices.contains(index) ? names[index] : "" },
             set: { newValue in
-                if names.indices.contains(index) { names[index] = newValue }
+                if names.indices.contains(index) { names[index] = Self.sanitizeName(newValue) }
             }
         )
+    }
+
+    /// Removes the stray whitespace iOS autocorrect can inject when it commits a
+    /// suggestion: drops any leading spaces and collapses runs of whitespace to a
+    /// single space. A single internal or trailing space is preserved so multi-word
+    /// names still work; trailing space is trimmed when the game starts.
+    private static func sanitizeName(_ raw: String) -> String {
+        var result = ""
+        var lastWasSpace = false
+        for character in raw {
+            if character == " " {
+                // Skip a leading space or a second consecutive space.
+                if result.isEmpty || lastWasSpace { continue }
+                lastWasSpace = true
+                result.append(character)
+            } else {
+                lastWasSpace = false
+                result.append(character)
+            }
+        }
+        return result
     }
 
     private var scoreString: String {
@@ -165,23 +189,17 @@ struct StartGameView: View {
         Button(action: startGame) {
             Text("Start game")
                 .font(.custom("Daydream", size: 16))
-                .foregroundStyle(canStart ? Self.accentGreen : Color.secondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .contentShape(Rectangle())
+                .foregroundStyle(Self.startTextColor)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .contentShape(Capsule())
         }
+        .background(Self.startGreen, in: Capsule())
         .buttonStyle(.plain)
+        .opacity(canStart ? 1.0 : 0.4)
         .disabled(!canStart)
-        .frame(height: 72)
-        .background {
-            ZStack {
-                Rectangle().fill(.ultraThinMaterial).opacity(0.5)
-                VStack(spacing: 0) {
-                    Rectangle().fill(Color.white.opacity(0.2)).frame(height: 1)
-                    Spacer(minLength: 0)
-                }
-            }
-            .ignoresSafeArea(edges: .bottom)
-        }
+        .padding(.horizontal)
+        .padding(.bottom, 8)
     }
 
     private var canStart: Bool {
@@ -203,7 +221,7 @@ struct StartGameView: View {
 
     private var scoreSheet: some View {
         VStack(spacing: 0) {
-            ForEach([2500, 5000, 10000], id: \.self) { score in
+            ForEach([10000, 5000, 2500], id: \.self) { score in
                 Button {
                     localTargetScore = score
                     showingScoreSheet = false
@@ -223,7 +241,7 @@ struct StartGameView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                if score != 10000 {
+                if score != 2500 {
                     Divider().opacity(0.3)
                 }
             }
@@ -285,7 +303,7 @@ private struct FlowLayout: Layout {
 
     private struct Placement {
         let index: Int
-        let x: CGFloat
+        var x: CGFloat
         let y: CGFloat
         let size: CGSize
     }
@@ -301,10 +319,23 @@ private struct FlowLayout: Layout {
         var x: CGFloat = 0
         var y: CGFloat = 0
         var rowHeight: CGFloat = 0
+        var rowStart = 0 // index into placements where the current row begins
+
+        // Centers the placements of the just-completed row within maxWidth.
+        func centerRow(upTo end: Int, rowWidth: CGFloat) {
+            guard maxWidth.isFinite else { return }
+            let offset = max(0, (maxWidth - rowWidth) / 2)
+            guard offset > 0 else { return }
+            for i in rowStart..<end {
+                arrangement.placements[i].x += offset
+            }
+        }
 
         for (index, subview) in subviews.enumerated() {
             let size = subview.sizeThatFits(.unspecified)
             if x > 0 && x + size.width > maxWidth {
+                centerRow(upTo: arrangement.placements.count, rowWidth: x - spacing)
+                rowStart = arrangement.placements.count
                 y += rowHeight + lineSpacing
                 x = 0
                 rowHeight = 0
@@ -314,6 +345,7 @@ private struct FlowLayout: Layout {
             rowHeight = max(rowHeight, size.height)
             arrangement.maxX = max(arrangement.maxX, x - spacing)
         }
+        centerRow(upTo: arrangement.placements.count, rowWidth: x - spacing)
         arrangement.maxY = y + rowHeight
         return arrangement
     }

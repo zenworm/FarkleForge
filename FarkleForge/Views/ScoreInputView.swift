@@ -14,6 +14,8 @@ struct ScoreInputView: View {
     
     private let farkleTint = Color(red: 255/255.0, green: 69/255.0, blue: 69/255.0) // #FF4545
     private let accentGreen = Color(red: 163/255.0, green: 234/255.0, blue: 146/255.0) // #A3EA92
+    private let bankGreen = Color(red: 96/255.0, green: 191/255.0, blue: 72/255.0) // #60BF48 — matches active player background
+    private let bankTextColor = Color(red: 22/255.0, green: 34/255.0, blue: 19/255.0) // #162213 — matches active player text
     
     private let columns = [
         GridItem(.flexible()),
@@ -83,44 +85,33 @@ struct ScoreInputView: View {
             }
             .padding(.horizontal)
 
-            // Action bar: full-width glass extending under the bottom safe area
-            HStack(spacing: 0) {
+            // Action bar: two fully rounded pill buttons on a single row
+            HStack(spacing: 12) {
                 Button(action: farkle) {
                     Text("Farkle")
-                        .fontWeight(.semibold)
-                        .foregroundStyle(farkleTint)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .contentShape(Rectangle())
+                        .font(.custom("Daydream", size: 12))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .contentShape(Capsule())
                 }
+                .background(farkleTint, in: Capsule())
                 .buttonStyle(.plain)
 
                 Button(action: submitScore) {
                     Text("Bank")
-                        .fontWeight(.semibold)
-                        .foregroundStyle(currentInput.isEmpty ? Color.secondary : accentGreen)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .contentShape(Rectangle())
+                        .font(.custom("Daydream", size: 12))
+                        .foregroundStyle(bankTextColor)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .contentShape(Capsule())
                 }
+                .background(bankGreen, in: Capsule())
                 .buttonStyle(.plain)
+                .opacity(currentInput.isEmpty ? 0.4 : 1.0)
                 .disabled(currentInput.isEmpty)
             }
-            .frame(height: 72)
-            .background {
-                ZStack {
-                    Rectangle()
-                        .fill(.ultraThinMaterial)
-                        .opacity(0.5)
-                    HStack(spacing: 0) {
-                        Rectangle().fill(Color.black.opacity(0.4)).frame(width: 1)
-                        Rectangle().fill(Color.white.opacity(0.2)).frame(width: 1)
-                    }
-                    VStack(spacing: 0) {
-                        Rectangle().fill(Color.white.opacity(0.2)).frame(height: 1)
-                        Spacer(minLength: 0)
-                    }
-                }
-                .ignoresSafeArea(edges: .bottom)
-            }
+            .padding(.horizontal)
             .padding(.top, 8)
         }
     }
