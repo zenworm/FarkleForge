@@ -347,24 +347,34 @@ private final class VerticalBuildParticleSystem {
         let currentProgress = sweepStart + (sweepEnd - sweepStart) * eased
         let edgeY = margin + canvasHeight * (1 - currentProgress)
 
-        // Single dense line of particles riding the leading edge as it climbs
-        let edgeCount = 80
-        for i in 0..<edgeCount {
-            let normalized = (CGFloat(i) + 0.5) / CGFloat(edgeCount)
-            let x = margin + canvasWidth * normalized + .random(in: -5...5)
-            particles.append(
-                Particle(
-                    x: x,
-                    y: edgeY + .random(in: -6...2),
-                    vx: .random(in: -6...6),
-                    vy: .random(in: -10...4),
-                    age: 0,
-                    lifetime: .random(in: 0.15...0.28),
-                    size: [4, 5, 5, 6, 6, 7].randomElement()!,
-                    color: Self.palette.randomElement()!,
-                    gravity: 0
+        // --- Coverage knobs: raise these to hide more of the gradient fade band ---
+        let columns = 80              // horizontal density
+        let layers = 3                // particles stacked per column to fill the band
+        let bandHeight: CGFloat = 80  // how far BELOW the reveal edge to fill (covers the fade)
+        let topOverscan: CGFloat = 12 // a little coverage ABOVE the edge too
+        // --------------------------------------------------------------------------
+
+        // A vertical band of particles trailing the leading edge as it climbs,
+        // dense enough to mask the soft gradient reveal beneath it.
+        for i in 0..<columns {
+            let normalized = (CGFloat(i) + 0.5) / CGFloat(columns)
+            for _ in 0..<layers {
+                let x = margin + canvasWidth * normalized + .random(in: -5...5)
+                let y = edgeY + .random(in: -topOverscan ... bandHeight)
+                particles.append(
+                    Particle(
+                        x: x,
+                        y: y,
+                        vx: .random(in: -6...6),
+                        vy: .random(in: -10...4),
+                        age: 0,
+                        lifetime: .random(in: 0.22...0.42),
+                        size: [5, 6, 6, 7, 8].randomElement()!,
+                        color: Self.palette.randomElement()!,
+                        gravity: 0
+                    )
                 )
-            )
+            }
         }
     }
 }

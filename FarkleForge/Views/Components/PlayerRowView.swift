@@ -59,6 +59,24 @@ struct PlayerRowView: View {
         }
     }
     
+    /// Background fill for the active player. Tweak the `.opacity(...)` value
+    /// here to adjust just the fill — the row's container/size is unaffected.
+    private var activeBackgroundColor: Color {
+        Color(red: 96/255.0, green: 191/255.0, blue: 72/255.0).opacity(0.5) // #60BF48
+    }
+
+    /// Scales a base font size to the device width so text reads consistently across
+    /// screen sizes. `base` is the size on a 393pt-wide screen (iPhone 14/15); it
+    /// grows/shrinks proportionally and is clamped to stay sane on small/large devices.
+    private func scaledFontSize(base: CGFloat) -> CGFloat {
+        let referenceWidth: CGFloat = 393
+        let scaled = base * UIScreen.main.bounds.width / referenceWidth
+        return min(max(scaled, base * 0.85), base * 1.4) // floor / ceiling
+    }
+
+    private var nameFontSize: CGFloat { scaledFontSize(base: 21) }  // tweak base for name size
+    private var scoreFontSize: CGFloat { scaledFontSize(base: 21) } // tweak base for score size
+
     private var cornerRadius: CGFloat = 0
     
     private var shape: UnevenRoundedRectangle {
@@ -74,7 +92,7 @@ struct PlayerRowView: View {
         ZStack(alignment: .leading) {
             // Background container
             shape
-                .fill(isCurrentTurn ? Color(red: 96/255.0, green: 191/255.0, blue: 72/255.0) : Color.clear) // #60BF48 or transparent
+                .fill(isCurrentTurn ? activeBackgroundColor : Color.clear)
             
             // Progress bar (full bleed on left, top, bottom)
             GeometryReader { geometry in
@@ -89,13 +107,13 @@ struct PlayerRowView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text(player.name)
-                        .font(.custom("JetBrainsMono-Medium", size: 20))
+                        .font(.custom("JetBrainsMono-Medium", size: nameFontSize))
                         .foregroundColor(nameColor)
 
                     Spacer()
 
                     Text("\(player.score)")
-                        .font(.custom("GeistMono-Bold", size: 20))
+                        .font(.custom("GeistMono-Bold", size: scoreFontSize))
                         .foregroundColor(scoreColor)
                 }
 
