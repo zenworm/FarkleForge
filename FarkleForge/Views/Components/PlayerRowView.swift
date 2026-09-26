@@ -15,8 +15,16 @@ struct PlayerRowView: View {
     let targetScore: Int
     let isFirst: Bool
     let isLast: Bool
-    
-    init(player: Player, isCurrentTurn: Bool, isFinalRound: Bool, leaderScore: Int, targetScore: Int, isFirst: Bool, isLast: Bool) {
+    /// The leader wears the crown. It hops between rows via matched geometry.
+    let hasCrown: Bool
+    let crownNamespace: Namespace.ID?
+    /// Reports where the score sits (in the "game" coordinate space) so a banked
+    /// number knows where to fly.
+    var onScoreFrame: (CGRect) -> Void = { _ in }
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    init(player: Player, isCurrentTurn: Bool, isFinalRound: Bool, leaderScore: Int, targetScore: Int, isFirst: Bool, isLast: Bool, hasCrown: Bool = false, crownNamespace: Namespace.ID? = nil, onScoreFrame: @escaping (CGRect) -> Void = { _ in }) {
         self.player = player
         self.isCurrentTurn = isCurrentTurn
         self.isFinalRound = isFinalRound
@@ -24,6 +32,9 @@ struct PlayerRowView: View {
         self.targetScore = targetScore
         self.isFirst = isFirst
         self.isLast = isLast
+        self.hasCrown = hasCrown
+        self.crownNamespace = crownNamespace
+        self.onScoreFrame = onScoreFrame
     }
     
     var pointsNeeded: Int? {
@@ -100,21 +111,36 @@ struct PlayerRowView: View {
                     .fill(progressBarColor)
                     .frame(width: geometry.size.width * progress)
                     .frame(maxHeight: .infinity, alignment: .leading)
+                    .overlay(alignment: .trailing) {
+                        ProgressTipGlow(progress: progress, isActive: isCurrentTurn)
+                    }
                     .animation(.easeOut(duration: 0.6), value: progress)
             }
             
             // Content
             VStack(alignment: .leading, spacing: 8) {
-                HStack {
+                HStack(spacing: 10) {
+                    if hasCrown {
+                        crown
+                    }
+
                     Text(player.name)
                         .font(.custom("JetBrainsMono-Medium", size: nameFontSize))
                         .foregroundColor(nameColor)
 
                     Spacer()
 
-                    Text("\(player.score)")
+                    // Rolls up digit by digit, in step with the bar
+                    Text(player.score, format: .number)
                         .font(.custom("GeistMono-Bold", size: scoreFontSize))
                         .foregroundColor(scoreColor)
+                        .contentTransition(.numericText(value: Double(player.score)))
+                        .animation(.easeOut(duration: 0.6), value: player.score)
+                        .onGeometryChange(for: CGRect.self) { proxy in
+                            proxy.frame(in: .named("game"))
+                        } action: { frame in
+                            onScoreFrame(frame)
+                        }
                 }
 
                 if let pointsNeeded = pointsNeeded, isCurrentTurn {
@@ -131,6 +157,49 @@ struct PlayerRowView: View {
             ProgressBuildEmitter(progress: progress, isActive: isCurrentTurn)
                 .allowsHitTesting(false)
         }
+        // A small hop when it becomes this player's turn
+        .keyframeAnimator(initialValue: 1.0, trigger: isCurrentTurn) { [hops = isCurrentTurn && !reduceMotion] content, scale in
+            content.scaleEffect(hops ? scale : 1)
+        } keyframes: { _ in
+            KeyframeTrack {
+                SpringKeyframe(1.035, duration: 0.14)
+                SpringKeyframe(1.0, duration: 0.4, spring: .bouncy)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(hasCrown ? "Leader" : "")
+    }
+
+    @ViewBuilder
+    private var crown: some View {
+        let crown = PixelCrown(pixel: 2)
+            .shadow(color: Palette.gold.opacity(isCurrentTurn ? 0 : 0.6), radius: 4)
+            .transition(.scale(scale: 0.2).combined(with: .opacity))
+        if let crownNamespace {
+            crown.matchedGeometryEffect(id: "crown", in: crownNamespace)
+        } else {
+            crown
+        }
+    }
+}
+
+/// A bright band riding the tip of the bar while it grows, then fading once it settles.
+private struct ProgressTipGlow: View {
+    let progress: Double
+    let isActive: Bool
+
+    @State private var glow = 0.0
+
+    var body: some View {
+        LinearGradient(colors: [.clear, Palette.mist], startPoint: .leading, endPoint: .trailing)
+            .frame(width: 28)
+            .opacity(glow)
+            .allowsHitTesting(false)
+            .onChange(of: progress) { oldValue, newValue in
+                guard isActive, newValue > oldValue else { return }
+                withAnimation(.easeOut(duration: 0.08)) { glow = 0.9 }
+                withAnimation(.easeOut(duration: 0.5).delay(0.45)) { glow = 0 }
+            }
     }
 }
 

@@ -10,6 +10,10 @@ import SwiftUI
 struct ContentView: View {
     @Environment(GameState.self) private var gameState
     @Environment(\.videoCache) private var videoCache
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage(SoundEngine.enabledKey) private var soundEnabled = true
+    @Namespace private var crownNamespace
+
     @State private var currentInput = ""
     @State private var showingPlayerList = false
     @State private var showingResetAlert = false
@@ -21,17 +25,39 @@ struct ContentView: View {
     @State private var introProgress: Double = 0
     @State private var showContent: Bool = false
     @State private var hasPlayedIntro: Bool = false
-    
+    /// Once the intro build finishes, the background's soft top edge (which hides
+    /// the reveal line) is filled in so the image shows right up behind the header.
+    @State private var introComplete: Bool = false
+
+    // The game's big beats
+    @State private var farkleCount = 0
+    @State private var farkleLines = FarkleLines()
+    @State private var farkleStreaks: [UUID: Int] = [:]
+    @State private var sticker: GameSticker? = nil
+    @State private var stickerTask: Task<Void, Never>? = nil
+    @State private var stickerTilt: Double = -3
+    @State private var crownHolder: UUID? = nil
+
+    // The banked number's flight from the display up to the player's score
+    @State private var flight: ScoreFlight? = nil
+    @State private var geometry = GameGeometry()
+
+    #if DEBUG
+    @State private var showingSoundLab = false
+    #endif
+
     var body: some View {
         Group {
             if gameState.players.isEmpty {
                 StartGameView()
+                    .transition(.opacity)
             } else {
                 // Game view - with navigation
                 NavigationStack {
                     gameInProgressView
                         .navigationTitle("What The Farkle")
                         .navigationBarTitleDisplayMode(.inline)
+                        .toolbarBackground(.hidden, for: .navigationBar)
                         .toolbar {
                             toolbarContent
                         }
@@ -41,33 +67,54 @@ struct ContentView: View {
                         .sheet(isPresented: $showingRulesSheet) {
                             FarkleRulesView()
                         }
+                        #if DEBUG
+                        .sheet(isPresented: $showingSoundLab) {
+                            SoundLabView()
+                        }
+                        #endif
                         .alert("New game", isPresented: $showingResetAlert) {
                             Button("Cancel", role: .cancel) { }
                             Button("New game", role: .destructive) {
-                                gameState.resetGame()
+                                withAnimation(.easeInOut(duration: 0.35)) {
+                                    gameState.resetGame()
+                                }
                                 currentInput = ""
                             }
                         } message: {
                             Text("This will remove all players and reset the game. Are you sure?")
                         }
                         .onChange(of: gameState.winner) { _, newValue in
-                            if newValue != nil {
-                                showingCelebration = true
+                            guard newValue != nil else { return }
+                            // Let the winning bar finish its sweep before the fog clears.
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+                                guard gameState.winner != nil else { return }
+                                // The celebration builds itself in, so skip the sheet slide.
+                                var transaction = Transaction()
+                                transaction.disablesAnimations = true
+                                withTransaction(transaction) {
+                                    showingCelebration = true
+                                }
                             }
                         }
                         .fullScreenCover(isPresented: $showingCelebration, onDismiss: {
                             gameState.resetScores()
+                            crownHolder = nil
+                            farkleStreaks = [:]
                         }) {
                             celebrationOverlay
                         }
                 }
+                .transition(.opacity)
             }
         }
         .onChange(of: gameState.players.isEmpty) { _, isEmpty in
             if isEmpty {
                 hasPlayedIntro = false
                 introProgress = 0
+                introComplete = false
                 showContent = false
+                crownHolder = nil
+                farkleStreaks = [:]
                 // Clear the background so the next game deals a fresh one from the
                 // shuffle bag; ContentView's @State persists across the reset, so
                 // without this the onAppear guard would reuse the previous image.
@@ -75,6 +122,17 @@ struct ContentView: View {
                 gameImageName = nil
             }
         }
+    }
+
+    private var currentAnimal: Animal? {
+        AnimalCatalog.animal(forBackground: gameImageName)
+    }
+
+    /// How close the leader is to winning, eased so the background creeps toward the
+    /// animal slowly at first and leans in hard at the end.
+    private var revealProgress: Double {
+        let target = Double(max(gameState.targetScore, 1))
+        return pow(min(Double(gameState.leaderScore) / target, 1), 1.4)
     }
 
     private var gameInProgressView: some View {
@@ -91,8 +149,12 @@ struct ContentView: View {
                                     leaderScore: gameState.leaderScore,
                                     targetScore: gameState.targetScore,
                                     isFirst: index == 0,
-                                    isLast: index == gameState.players.count - 1
-                                )
+                                    isLast: index == gameState.players.count - 1,
+                                    hasCrown: player.id == crownHolder,
+                                    crownNamespace: crownNamespace
+                                ) { frame in
+                                    self.geometry.scoreFrames[player.id] = frame
+                                }
                                 .id(player.id)
                             }
                         }
@@ -103,6 +165,7 @@ struct ContentView: View {
                     }
                     .scrollIndicators(.hidden)
                     .scrollClipDisabled()
+                    .scrollEdgeEffectHidden(true, for: .top)
                     .mask {
                         VStack(spacing: 0) {
                             // Long fade from the very top of the screen so rows
@@ -118,7 +181,7 @@ struct ContentView: View {
                 }
                 .onChange(of: gameState.currentTurnIndex) { oldValue, newValue in
                     if let currentPlayer = gameState.currentPlayer {
-                        withAnimation(.easeInOut(duration: 0.3)) {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
                             proxy.scrollTo(currentPlayer.id, anchor: .center)
                         }
                     }
@@ -132,42 +195,75 @@ struct ContentView: View {
                 }
             }
             .opacity(showContent ? 1 : 0)
-
-            ScoreInputView(currentInput: $currentInput) { score in
-                guard !isBanking, let currentPlayer = gameState.currentPlayer else { return }
-                isBanking = true
-                gameState.applyBankedScore(score, to: currentPlayer.id)
-                currentInput = ""
-                // Let the progress bar animation play before the turn moves on
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        gameState.advanceTurn()
-                    }
-                    isBanking = false
+            // Low in the list, just above the display: the active row is always
+            // centered, so this never covers whose turn it is now.
+            .overlay(alignment: .bottom) {
+                if let sticker {
+                    StickerView(sticker: sticker)
+                        .id(sticker.id)
+                        .transition(.sticker)
+                        .padding(.bottom, 4)
+                        .allowsHitTesting(false)
                 }
-            } onFarkle: {
-                guard !isBanking else { return }
-                gameState.advanceTurn()
             }
+
+            ScoreInputView(
+                currentInput: $currentInput,
+                isDisplayHidden: flight != nil,
+                onSubmit: bank,
+                onFarkle: farkle,
+                onDisplayFrame: { geometry.displayFrame = $0 }
+            )
             .opacity(showContent ? 1 : 0)
+        }
+        .farkleShake(trigger: farkleCount, enabled: !reduceMotion)
+        .coordinateSpace(.named("game"))
+        .overlay {
+            if let flight {
+                ScoreFlightView(flight: flight)
+                    // Lands with a little poof as the score starts rolling
+                    .transition(.scale(scale: 1.6).combined(with: .opacity))
+            }
+        }
+        .overlay {
+            FarkleVignette(trigger: farkleCount)
         }
         .background {
             ZStack {
-                Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0) // #1B2918
+                Palette.forest
                 if let name = gameImageName {
+                    let focus = currentAnimal?.focus ?? UnitPoint(x: 0.5, y: 0.25)
                     Image(name)
                         .resizable()
                         .scaledToFill()
-                        .mask {
-                            LinearGradient(
-                                stops: [
-                                    .init(color: .clear, location: 0),
-                                    .init(color: .black, location: 0.18),
-                                    .init(color: .black, location: 1)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
+                        // The leader's progress is the whole game's progress bar: the
+                        // camera slowly leans in toward the animal in the fog, and a
+                        // soft light finds it, until the celebration clears the fog.
+                        .overlay {
+                            RadialGradient(
+                                colors: [Palette.mist.opacity(0.55 * revealProgress), .clear],
+                                center: focus,
+                                startRadius: 0,
+                                endRadius: 240
                             )
+                            .blendMode(.softLight)
+                        }
+                        .scaleEffect(reduceMotion ? 1 : 1 + 0.16 * revealProgress, anchor: focus)
+                        .animation(.easeInOut(duration: 1.6), value: revealProgress)
+                        .mask {
+                            ZStack {
+                                LinearGradient(
+                                    stops: [
+                                        .init(color: .clear, location: 0),
+                                        .init(color: .black, location: 0.18),
+                                        .init(color: .black, location: 1)
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                                Rectangle()
+                                    .opacity(introComplete ? 1 : 0)
+                            }
                             .scaleEffect(x: 1, y: introProgress, anchor: .bottom)
                         }
                     VerticalBuildEmitter(progress: introProgress)
@@ -182,6 +278,7 @@ struct ContentView: View {
                 gameVideoURL = selection.url
                 gameImageName = selection.name
             }
+            updateCrown()
             if !hasPlayedIntro {
                 hasPlayedIntro = true
                 withAnimation(.easeOut(duration: 1.0)) {
@@ -190,12 +287,168 @@ struct ContentView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     withAnimation(.easeOut(duration: 0.4)) {
                         showContent = true
+                        introComplete = true
                     }
                 }
+                #if DEBUG
+                DemoScript.run(on: self)
+                #endif
             }
         }
     }
-    
+
+    // MARK: - Banking
+
+    fileprivate func bank(_ score: Int) {
+        guard !isBanking, let player = gameState.currentPlayer else { return }
+        isBanking = true
+        SoundEngine.shared.play(.coin)
+        Haptics.soft()
+
+        let text = currentInput.isEmpty ? String(score) : currentInput
+        guard !reduceMotion,
+              let target = geometry.scoreFrames[player.id], target != .zero,
+              geometry.displayFrame != .zero else {
+            currentInput = ""
+            land(score, for: player.id)
+            return
+        }
+
+        // Toss the typed number up to the player's score. Horizontal and vertical
+        // motion use different curves, which bends the path into a little arc.
+        flight = ScoreFlight(text: text, from: geometry.displayFrame.center, to: target.center)
+        currentInput = ""
+        withAnimation(.easeIn(duration: 0.3)) {
+            flight?.arrivedX = true
+        }
+        withAnimation(.timingCurve(0.2, 0.7, 0.4, 1, duration: 0.3)) {
+            flight?.arrivedY = true
+        } completion: {
+            withAnimation(.easeOut(duration: 0.18)) {
+                flight = nil
+            }
+            land(score, for: player.id)
+        }
+    }
+
+    private func land(_ score: Int, for playerId: UUID) {
+        guard let before = gameState.players.first(where: { $0.id == playerId }) else {
+            isBanking = false
+            return
+        }
+        let wasFinalRound = gameState.isFinalRound
+        let target = Double(max(gameState.targetScore, 1))
+        let fromProgress = min(Double(before.score) / target, 1)
+        let toProgress = min(Double(before.score + score) / target, 1)
+
+        var crownChanged = false
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.68)) {
+            gameState.applyBankedScore(score, to: playerId)
+            crownChanged = updateCrown()
+        }
+        farkleStreaks[playerId] = 0
+
+        // The fill arpeggio and haptic ticks ride the bar as it sweeps.
+        SoundEngine.shared.play(.fill(from: fromProgress, to: toProgress))
+        Haptics.fill(steps: Synth.fillSteps(from: fromProgress, to: toProgress), duration: 0.6)
+
+        if crownChanged {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                SoundEngine.shared.play(.crown)
+                Haptics.rigid(0.6)
+            }
+        }
+
+        if !wasFinalRound && gameState.isFinalRound && gameState.winner == nil,
+           let leader = gameState.players.first(where: { $0.id == gameState.finalRoundTriggerPlayerId }) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                SoundEngine.shared.play(.finalRound)
+                Haptics.success()
+                showSticker(style: .finalRound, title: "Final round", message: "Beat \(leader.name)'s \(leader.score.formatted())")
+            }
+        }
+
+        // Let the progress bar animation play before the turn moves on
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                gameState.advanceTurn()
+            }
+            isBanking = false
+        }
+    }
+
+    // MARK: - Farkles
+
+    fileprivate func farkle() {
+        guard !isBanking, let player = gameState.currentPlayer else { return }
+
+        let streak = (farkleStreaks[player.id] ?? 0) + 1
+        farkleStreaks[player.id] = streak
+        let line = farkleLines.next(name: player.name, animal: currentAnimal?.species, streak: streak)
+
+        farkleCount += 1
+        SoundEngine.shared.playFarkle()
+        Haptics.farkle()
+        showSticker(style: .farkle, title: streak > 1 ? "Farkle ×\(streak)" : "Farkle!", message: line)
+
+        withAnimation(.easeIn(duration: 0.18)) {
+            currentInput = ""
+        }
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+            gameState.farkle()
+        }
+    }
+
+    private func undo() {
+        SoundEngine.shared.play(.undo)
+        Haptics.soft(0.6)
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+            gameState.undoLastScoreEntry()
+            updateCrown()
+        }
+        // If the undone entry was a farkle, it no longer counts toward the streak.
+        if let id = gameState.currentPlayer?.id {
+            farkleStreaks[id] = max(0, (farkleStreaks[id] ?? 0) - 1)
+        }
+        currentInput = ""
+    }
+
+    private func showSticker(style: GameSticker.Style, title: String, message: String) {
+        stickerTilt = stickerTilt < 0 ? .random(in: 2...3.5) : -.random(in: 2...3.5)
+        stickerTask?.cancel()
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.58)) {
+            sticker = GameSticker(style: style, title: title, message: message, tilt: stickerTilt)
+        }
+        stickerTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(style == .farkle ? 1.7 : 2.2))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeIn(duration: 0.22)) {
+                sticker = nil
+            }
+        }
+    }
+
+    /// The crown goes to the outright leader. On a tie it stays where it is, so the
+    /// only way to take it is to pass the holder.
+    @discardableResult
+    private func updateCrown() -> Bool {
+        let top = gameState.players.map(\.score).max() ?? 0
+        let newHolder: UUID?
+        if top <= 0 {
+            newHolder = nil
+        } else if let holder = crownHolder,
+                  gameState.players.first(where: { $0.id == holder })?.score == top {
+            newHolder = holder
+        } else {
+            newHolder = gameState.players.first { $0.score == top }?.id
+        }
+        let changed = newHolder != crownHolder && newHolder != nil
+        crownHolder = newHolder
+        return changed
+    }
+
+    // MARK: - Chrome
+
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .principal) {
@@ -206,14 +459,12 @@ struct ContentView: View {
 
         ToolbarItem(placement: .navigationBarLeading) {
             if !gameState.players.isEmpty {
-                Button(action: {
-                    gameState.undoLastScoreEntry()
-                    currentInput = ""
-                }) {
+                Button(action: undo) {
                     Image(systemName: "arrow.uturn.backward")
                 }
                 .disabled(!gameState.canUndoLastScoreEntry || isBanking)
                 .opacity(gameState.canUndoLastScoreEntry && !isBanking ? 1.0 : 0.35)
+                .accessibilityLabel("Undo")
             }
         }
 
@@ -227,6 +478,14 @@ struct ContentView: View {
                 Button(action: { showingRulesSheet = true }) {
                     Label("Farkle rules", systemImage: "book")
                 }
+                Toggle(isOn: $soundEnabled) {
+                    Label("Sound", systemImage: soundEnabled ? "speaker.wave.2" : "speaker.slash")
+                }
+                #if DEBUG
+                Button(action: { showingSoundLab = true }) {
+                    Label("Sound lab", systemImage: "waveform")
+                }
+                #endif
             } label: {
                 Image(systemName: "ellipsis.circle")
             }
@@ -235,152 +494,87 @@ struct ContentView: View {
 
     @ViewBuilder
     private var celebrationOverlay: some View {
-        ZStack {
-            Color.black.opacity(0.8)
-                .ignoresSafeArea()
-            
-            if let winner = gameState.winner {
-                CelebrationView(winnerName: winner.name, videoURL: gameVideoURL) {
-                    let selection = videoCache.selectForNewGame()
-                    gameVideoURL = selection.url
-                    gameImageName = selection.name
-                    showingCelebration = false
-                }
+        if let winner = gameState.winner {
+            CelebrationView(winnerName: winner.name, videoURL: gameVideoURL, fogImageName: gameImageName) {
+                let selection = videoCache.selectForNewGame()
+                gameVideoURL = selection.url
+                gameImageName = selection.name
+                showingCelebration = false
             }
+        } else {
+            Color.black.ignoresSafeArea()
         }
     }
 }
 
-private struct VerticalBuildEmitter: View {
-    let progress: Double
+// MARK: - Score flight
 
-    @State private var system = VerticalBuildParticleSystem()
-    @State private var isRunning = false
-    @State private var runGeneration = 0
+private struct ScoreFlight {
+    let text: String
+    let from: CGPoint
+    let to: CGPoint
+    var arrivedX = false
+    var arrivedY = false
+}
 
-    private let margin: CGFloat = 24
+private struct ScoreFlightView: View {
+    let flight: ScoreFlight
 
     var body: some View {
-        TimelineView(.animation(paused: !isRunning)) { timeline in
-            Canvas { context, size in
-                system.update(at: timeline.date, canvasSize: size, margin: margin)
-                for particle in system.particles {
-                    let alpha = max(0, 1 - particle.age / particle.lifetime)
-                    let rect = CGRect(x: particle.x, y: particle.y, width: particle.size, height: particle.size)
-                    context.fill(Path(rect), with: .color(particle.color.opacity(alpha)))
-                }
-            }
-        }
-        .padding(-margin)
-        .onChange(of: progress) { oldValue, newValue in
-            guard newValue > oldValue else { return }
-            system.beginSweep(from: oldValue, to: newValue)
-            isRunning = true
-            runGeneration += 1
-            let generation = runGeneration
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                if generation == runGeneration {
-                    isRunning = false
-                }
-            }
-        }
+        Text(flight.text)
+            .font(.custom("GeistMono-Regular", size: 34))
+            .foregroundColor(Palette.accent)
+            .shadow(color: Palette.accent.opacity(0.6), radius: flight.arrivedY ? 10 : 0)
+            .scaleEffect(flight.arrivedY ? 0.6 : 1)
+            .position(x: flight.arrivedX ? flight.to.x : flight.from.x,
+                      y: flight.arrivedY ? flight.to.y : flight.from.y)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 }
 
-private final class VerticalBuildParticleSystem {
-    struct Particle {
-        var x: CGFloat
-        var y: CGFloat
-        var vx: CGFloat
-        var vy: CGFloat
-        var age: TimeInterval
-        let lifetime: TimeInterval
-        let size: CGFloat
-        let color: Color
-        let gravity: CGFloat
-    }
+/// Frames measured during layout. A plain class on purpose: rows report their
+/// frames on every scroll tick, and none of that should trigger a re-render.
+private final class GameGeometry {
+    var displayFrame: CGRect = .zero
+    var scoreFrames: [UUID: CGRect] = [:]
+}
 
-    private(set) var particles: [Particle] = []
-    private var sweepStart: Double = 0
-    private var sweepEnd: Double = 0
-    private var sweepBeganAt: Date?
-    private var lastUpdate: Date?
+private extension CGRect {
+    var center: CGPoint { CGPoint(x: midX, y: midY) }
+}
 
-    // Matches the intro reveal's .easeOut(duration: 1.0)
-    private let sweepDuration: TimeInterval = 1.0
+// MARK: - Debug demo
 
-    private static let palette: [Color] = [
-        Color(red: 233/255.0, green: 255/255.0, blue: 224/255.0), // #E9FFE0 very light
-        Color(red: 185/255.0, green: 239/255.0, blue: 168/255.0), // #B9EFA8 light
-        Color(red: 145/255.0, green: 218/255.0, blue: 127/255.0), // #91DA7F mid
-        Color(red: 96/255.0, green: 191/255.0, blue: 72/255.0),   // #60BF48 dark
-        Color(red: 60/255.0, green: 110/255.0, blue: 45/255.0),   // deep
-    ]
-
-    func beginSweep(from: Double, to: Double) {
-        sweepStart = from
-        sweepEnd = to
-        sweepBeganAt = Date()
-    }
-
-    func update(at date: Date, canvasSize: CGSize, margin: CGFloat) {
-        let dt = min(lastUpdate.map { date.timeIntervalSince($0) } ?? 0, 1.0 / 20.0)
-        lastUpdate = date
-
-        for index in particles.indices {
-            particles[index].age += dt
-            particles[index].vy += particles[index].gravity * dt
-            particles[index].x += particles[index].vx * dt
-            particles[index].y += particles[index].vy * dt
+#if DEBUG
+/// Drives the game from a launch argument, for recording motion in the simulator
+/// without tapping: `-demo bank`, `-demo farkle`, `-demo final`, `-demo win`.
+private enum DemoScript {
+    static func run(on view: ContentView) {
+        guard let demo = UserDefaults.standard.string(forKey: "demo") else { return }
+        func after(_ delay: Double, _ work: @escaping () -> Void) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
         }
-        particles.removeAll { $0.age >= $0.lifetime }
-
-        guard let beganAt = sweepBeganAt else { return }
-        let t = date.timeIntervalSince(beganAt) / sweepDuration
-        if t >= 1 {
-            sweepBeganAt = nil
-            return
-        }
-        let eased = 1 - pow(1 - t, 3)
-        let canvasWidth = canvasSize.width - margin * 2
-        let canvasHeight = canvasSize.height - margin * 2
-        let currentProgress = sweepStart + (sweepEnd - sweepStart) * eased
-        let edgeY = margin + canvasHeight * (1 - currentProgress)
-
-        // --- Coverage knobs: raise these to hide more of the gradient fade band ---
-        let columns = 80              // horizontal density
-        let layers = 3                // particles stacked per column to fill the band
-        let bandHeight: CGFloat = 80  // how far BELOW the reveal edge to fill (covers the fade)
-        let topOverscan: CGFloat = 12 // a little coverage ABOVE the edge too
-        // --------------------------------------------------------------------------
-
-        // A vertical band of particles trailing the leading edge as it climbs,
-        // dense enough to mask the soft gradient reveal beneath it.
-        for i in 0..<columns {
-            let normalized = (CGFloat(i) + 0.5) / CGFloat(columns)
-            for _ in 0..<layers {
-                let x = margin + canvasWidth * normalized + .random(in: -5...5)
-                let y = edgeY + .random(in: -topOverscan ... bandHeight)
-                particles.append(
-                    Particle(
-                        x: x,
-                        y: y,
-                        vx: .random(in: -6...6),
-                        vy: .random(in: -10...4),
-                        age: 0,
-                        lifetime: .random(in: 0.22...0.42),
-                        size: [5, 6, 6, 7, 8].randomElement()!,
-                        color: Self.palette.randomElement()!,
-                        gravity: 0
-                    )
-                )
-            }
+        switch demo {
+        case "farkle":
+            after(2.0) { view.farkle() }
+            after(3.2) { view.farkle() }
+        case "bank":
+            after(2.0) { view.bank(1500) }
+        case "final":
+            after(2.0) { view.bank(4000) }
+        case "win":
+            after(2.0) { view.bank(4000) }
+            after(3.6) { view.bank(9000) }
+            after(5.2) { view.farkle() }
+        default:
+            break
         }
     }
 }
+#endif
 
 #Preview {
     ContentView()
         .environment(GameState())
 }
-

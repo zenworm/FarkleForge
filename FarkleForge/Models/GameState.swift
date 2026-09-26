@@ -32,9 +32,11 @@ class GameState {
     
     private var undoStack: [UndoSnapshot] = []
     
-    // Cache for leader to avoid recalculating on every access
-    private var _cachedLeader: Player? = nil
-    private var _leaderCacheValid: Bool = false
+    // Cache for leader to avoid recalculating on every access. Ignored by observation:
+    // it's filled in lazily while views read `leader`, and writing an observed value
+    // during a view update crashes SwiftUI.
+    @ObservationIgnored private var _cachedLeader: Player? = nil
+    @ObservationIgnored private var _leaderCacheValid: Bool = false
     
     var currentPlayer: Player? {
         guard !players.isEmpty, currentTurnIndex < players.count else {
@@ -143,6 +145,13 @@ class GameState {
         addScore(points, to: playerId)
     }
     
+    /// A farkle scores nothing but still ends the turn. It's snapshotted like a bank
+    /// so a mis-tapped Farkle can be undone.
+    func farkle() {
+        pushUndoSnapshot()
+        advanceTurn()
+    }
+
     func addScore(_ points: Int, to playerId: UUID) {
         guard let index = players.firstIndex(where: { $0.id == playerId }) else { return }
         
