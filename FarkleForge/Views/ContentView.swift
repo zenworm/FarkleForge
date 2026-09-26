@@ -19,15 +19,15 @@ struct ContentView: View {
     @State private var showingResetAlert = false
     @State private var showingRulesSheet = false
     @State private var showingCelebration = false
+    /// The game's chrome (rows, keypad, header) steps aside so the celebration can
+    /// build the animal directly over the live background.
+    @State private var isCelebrating = false
     @State private var gameVideoURL: URL? = nil
     @State private var gameImageName: String? = nil
     @State private var isBanking = false
-    @State private var introProgress: Double = 0
+    @State private var isIntroRevealed = false
     @State private var showContent: Bool = false
     @State private var hasPlayedIntro: Bool = false
-    /// Once the intro build finishes, the background's soft top edge (which hides
-    /// the reveal line) is filled in so the image shows right up behind the header.
-    @State private var introComplete: Bool = false
 
     // The game's big beats
     @State private var farkleCount = 0
@@ -88,11 +88,18 @@ struct ContentView: View {
                             // Let the winning bar finish its sweep before the fog clears.
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
                                 guard gameState.winner != nil else { return }
-                                // The celebration builds itself in, so skip the sheet slide.
-                                var transaction = Transaction()
-                                transaction.disablesAnimations = true
-                                withTransaction(transaction) {
-                                    showingCelebration = true
+                                // Clear the stage, leaving only the fog...
+                                withAnimation(.easeOut(duration: 0.3)) {
+                                    isCelebrating = true
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                    // ...then present over it. The celebration has a clear
+                                    // background and builds itself in, so no sheet slide.
+                                    var transaction = Transaction()
+                                    transaction.disablesAnimations = true
+                                    withTransaction(transaction) {
+                                        showingCelebration = true
+                                    }
                                 }
                             }
                         }
@@ -100,8 +107,17 @@ struct ContentView: View {
                             gameState.resetScores()
                             crownHolder = nil
                             farkleStreaks = [:]
+                            // The next game's background builds in, then the chrome returns.
+                            isCelebrating = false
+                            isIntroRevealed = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                                withAnimation(.easeOut(duration: 0.4)) {
+                                    showContent = true
+                                }
+                            }
                         }) {
                             celebrationOverlay
+                                .presentationBackground(.clear)
                         }
                 }
                 .transition(.opacity)
@@ -110,8 +126,7 @@ struct ContentView: View {
         .onChange(of: gameState.players.isEmpty) { _, isEmpty in
             if isEmpty {
                 hasPlayedIntro = false
-                introProgress = 0
-                introComplete = false
+                isIntroRevealed = false
                 showContent = false
                 crownHolder = nil
                 farkleStreaks = [:]
@@ -216,6 +231,7 @@ struct ContentView: View {
             )
             .opacity(showContent ? 1 : 0)
         }
+        .opacity(isCelebrating ? 0 : 1)
         .farkleShake(trigger: farkleCount, enabled: !reduceMotion)
         .coordinateSpace(.named("game"))
         .overlay {
@@ -232,42 +248,11 @@ struct ContentView: View {
             ZStack {
                 Palette.forest
                 if let name = gameImageName {
-                    let focus = currentAnimal?.focus ?? UnitPoint(x: 0.5, y: 0.25)
-                    Image(name)
-                        .resizable()
-                        .scaledToFill()
-                        // The leader's progress is the whole game's progress bar: the
-                        // camera slowly leans in toward the animal in the fog, and a
-                        // soft light finds it, until the celebration clears the fog.
-                        .overlay {
-                            RadialGradient(
-                                colors: [Palette.mist.opacity(0.55 * revealProgress), .clear],
-                                center: focus,
-                                startRadius: 0,
-                                endRadius: 240
-                            )
-                            .blendMode(.softLight)
-                        }
-                        .scaleEffect(reduceMotion ? 1 : 1 + 0.16 * revealProgress, anchor: focus)
-                        .animation(.easeInOut(duration: 1.6), value: revealProgress)
-                        .mask {
-                            ZStack {
-                                LinearGradient(
-                                    stops: [
-                                        .init(color: .clear, location: 0),
-                                        .init(color: .black, location: 0.18),
-                                        .init(color: .black, location: 1)
-                                    ],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                                Rectangle()
-                                    .opacity(introComplete ? 1 : 0)
-                            }
-                            .scaleEffect(x: 1, y: introProgress, anchor: .bottom)
-                        }
-                    VerticalBuildEmitter(progress: introProgress)
-                        .allowsHitTesting(false)
+                    // The background builds itself up out of its own pixels.
+                    PixelBuildReveal(isRevealed: isIntroRevealed, duration: 1.0, colorSource: .image(name)) {
+                        FogBackdrop(imageName: name, closeness: revealProgress)
+                            .animation(.easeInOut(duration: 1.6), value: revealProgress)
+                    }
                 }
             }
             .ignoresSafeArea()
@@ -281,13 +266,10 @@ struct ContentView: View {
             updateCrown()
             if !hasPlayedIntro {
                 hasPlayedIntro = true
-                withAnimation(.easeOut(duration: 1.0)) {
-                    introProgress = 1
-                }
+                isIntroRevealed = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     withAnimation(.easeOut(duration: 0.4)) {
                         showContent = true
-                        introComplete = true
                     }
                 }
                 #if DEBUG
@@ -451,10 +433,13 @@ struct ContentView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
+        // The bar stays in place during the celebration (removing it would shift the
+        // layout); its contents and glass backgrounds just fade away.
         ToolbarItem(placement: .principal) {
             Text("What The Farkle")
                 .font(.custom("Daydream", size: 16))
                 .fontWeight(.bold)
+                .opacity(isCelebrating ? 0 : 1)
         }
 
         ToolbarItem(placement: .navigationBarLeading) {
@@ -463,10 +448,11 @@ struct ContentView: View {
                     Image(systemName: "arrow.uturn.backward")
                 }
                 .disabled(!gameState.canUndoLastScoreEntry || isBanking)
-                .opacity(gameState.canUndoLastScoreEntry && !isBanking ? 1.0 : 0.35)
+                .opacity(isCelebrating ? 0 : (gameState.canUndoLastScoreEntry && !isBanking ? 1.0 : 0.35))
                 .accessibilityLabel("Undo")
             }
         }
+        .sharedBackgroundVisibility(isCelebrating ? .hidden : .visible)
 
         ToolbarItem(placement: .navigationBarTrailing) {
             Menu {
@@ -488,14 +474,20 @@ struct ContentView: View {
                 #endif
             } label: {
                 Image(systemName: "ellipsis.circle")
+                    .opacity(isCelebrating ? 0 : 1)
             }
         }
+        .sharedBackgroundVisibility(isCelebrating ? .hidden : .visible)
     }
 
     @ViewBuilder
     private var celebrationOverlay: some View {
         if let winner = gameState.winner {
-            CelebrationView(winnerName: winner.name, videoURL: gameVideoURL, fogImageName: gameImageName) {
+            CelebrationView(winnerName: winner.name, videoURL: gameVideoURL) {
+                // Hide the backdrop before swapping in the next game's, so it can
+                // build in fresh once the celebration slides away.
+                isIntroRevealed = false
+                showContent = false
                 let selection = videoCache.selectForNewGame()
                 gameVideoURL = selection.url
                 gameImageName = selection.name

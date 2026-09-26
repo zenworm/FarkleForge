@@ -14,15 +14,13 @@ struct CelebrationView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let winnerName: String
     let videoURL: URL?
-    /// The foggy background the game was played over. The celebration opens on it,
-    /// then the fog gives way to the animal, built up pixel by pixel.
-    var fogImageName: String? = nil
     let onDismiss: () -> Void
     @State private var showBottomSheet = false
     @State private var showScores = false
     @State private var videoOffset: CGFloat = 0
     @State private var maskProgress: CGFloat = 0
-    @State private var revealProgress: Double = 0
+    @State private var isRevealed = false
+    @State private var fogCleared = false
     @State private var titleProgress: Double = 0
     @State private var confettiBursts = 0
 
@@ -60,49 +58,38 @@ struct CelebrationView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Background image behind video
+            // Background image behind video. Hidden at first: the celebration is
+            // presented over the game's own foggy background (this view has a clear
+            // background), so the animal builds up out of the exact frame the game
+            // ended on.
             Image("celebrationbg")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
-
-            // The fog from the game, until the animal builds up over it
-            if let fogImageName {
-                Image(fogImageName)
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-                    .opacity(revealProgress < 1 ? 1 : 0)
-            }
+                .opacity(fogCleared ? 1 : 0)
 
             // Fullscreen video background, shifts up when bottom sheet appears
             // Gradient mask fades the video at the bottom, revealing the bg image beneath
-            ZStack {
-                LoopingVideoPlayer(url: videoURL)
-                    .ignoresSafeArea()
-                    .mask(
-                        LinearGradient(
-                            stops: [
-                                .init(color: .black, location: 0),
-                                .init(color: .black, location: 0.85),
-                                .init(color: .black.opacity(1.0 - maskProgress), location: 1.0)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
+            PixelBuildReveal(isRevealed: isRevealed, duration: 1.1, colorSource: videoURL.map { .video($0) } ?? .none) {
+                ZStack {
+                    LoopingVideoPlayer(url: videoURL)
+                        .ignoresSafeArea()
+                        .mask(
+                            LinearGradient(
+                                stops: [
+                                    .init(color: .black, location: 0),
+                                    .init(color: .black, location: 0.85),
+                                    .init(color: .black.opacity(1.0 - maskProgress), location: 1.0)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
                         )
-                    )
-                    .offset(y: videoOffset)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.8), value: videoOffset)
+                        .offset(y: videoOffset)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.8), value: videoOffset)
+                }
             }
-            .mask {
-                Rectangle()
-                    .scaleEffect(x: 1, y: revealProgress, anchor: .bottom)
-                    .ignoresSafeArea()
-            }
-
-            VerticalBuildEmitter(progress: revealProgress, duration: 1.1)
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
+            .ignoresSafeArea()
 
             PixelConfetti(bursts: confettiBursts)
                 .ignoresSafeArea()
@@ -234,9 +221,10 @@ struct CelebrationView: View {
             // 1. The fog clears: the animal builds up from the bottom in pixels.
             let revealDelay = reduceMotion ? 0 : 0.15
             DispatchQueue.main.asyncAfter(deadline: .now() + revealDelay) {
-                withAnimation(.easeOut(duration: reduceMotion ? 0.3 : 1.1)) {
-                    revealProgress = 1
-                }
+                isRevealed = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + revealDelay + 1.3) {
+                fogCleared = true
             }
             // 2. Fanfare and confetti the moment it's whole.
             DispatchQueue.main.asyncAfter(deadline: .now() + revealDelay + 0.95) {

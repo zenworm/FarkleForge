@@ -130,6 +130,38 @@ extension View {
     }
 }
 
+/// The foggy game background. The leader's progress is the whole game's progress
+/// bar: as `closeness` rises the camera leans in toward the animal hiding in the
+/// fog and a soft light finds it. The celebration is presented over this same
+/// view, so the animal builds up out of the exact frame the game ended on.
+struct FogBackdrop: View {
+    let imageName: String
+    /// 0 at the start of a game, 1 once someone has reached the target.
+    let closeness: Double
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var focus: UnitPoint {
+        AnimalCatalog.animal(forBackground: imageName)?.focus ?? UnitPoint(x: 0.5, y: 0.25)
+    }
+
+    var body: some View {
+        Image(imageName)
+            .resizable()
+            .scaledToFill()
+            .overlay {
+                RadialGradient(
+                    colors: [Palette.mist.opacity(0.55 * closeness), .clear],
+                    center: focus,
+                    startRadius: 0,
+                    endRadius: 240
+                )
+                .blendMode(.softLight)
+            }
+            .scaleEffect(reduceMotion ? 1 : 1 + 0.16 * closeness, anchor: focus)
+    }
+}
+
 struct ShakeValue {
     var x: CGFloat = 0
     var angle: Double = 0
