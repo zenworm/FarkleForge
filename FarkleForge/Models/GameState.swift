@@ -7,6 +7,7 @@
 
 import Foundation
 import Observation
+import SwiftUI
 
 @Observable
 class GameState {
@@ -98,9 +99,8 @@ class GameState {
         invalidateLeaderCache()
     }
     
-    init() {
-        // Load saved players on initialization
-        self.players = PlayerPersistence.load()
+    init(players: [Player]? = nil) {
+        self.players = players ?? PlayerPersistence.load()
     }
     
     func addPlayer(name: String) {
@@ -139,6 +139,7 @@ class GameState {
     /// The caller is responsible for calling advanceTurn() afterwards,
     /// so the UI can animate the score change before the turn moves on.
     func applyBankedScore(_ points: Int, to playerId: UUID) {
+        guard points >= 0, winner == nil, players.contains(where: { $0.id == playerId }) else { return }
         pushUndoSnapshot()
         addScore(points, to: playerId)
     }

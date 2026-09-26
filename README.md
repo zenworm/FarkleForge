@@ -1,64 +1,49 @@
-# Farkle Score Tracker
+# What The Farkle
 
-A modern iOS app for tracking scores in the dice game Farkle, built with SwiftUI and targeting iOS 17+.
+A native SwiftUI scorekeeper for a physical game of Farkle. Bring six dice and a few friends; the app handles the scores, turns, and bragging rights.
 
-## Features
+## The woodland arcade
 
-- **Player Management**: Add and remove players dynamically
-- **Turn Tracking**: Clear visual indicator of whose turn it is
-- **Calculator-Style Input**: Large, touch-friendly number pad for quick score entry
-- **Quick Shortcuts**: Fast buttons for adding common scores (+50, +100)
-- **Score Display**: Real-time score updates with highlighted current player
-- **Game Reset**: Reset all scores to start a new game
+The design keeps the original Daydream pixel lettering, green landscapes, and rotating celebration videos, with a shared forest / mint / cream / gold / coral palette.
 
-## Project Structure
+- **Set the table:** 2–8 named players and quick (2,500), casual (5,000), or classic (10,000) targets. Tap the decorative dice for a little toss.
+- **Keep score:** player-colored dice, animated score counters, progress tracks, and a crown for the lead. Larger groups scroll to the active player.
+- **Bank or bust:** raised number keys, additive +50/+100/+500 shortcuts, digit backspace, and the original 00/50 suffix keys. Banking has a pixel burst; a Farkle has its own feedback. Both are undoable.
+- **Make some noise:** original, locally synthesized cues for taps, dice, banking, Farkles, and victory, paired with haptics. The speaker button remembers mute, and audio respects the silent switch and mixes with music.
+- **Take a victory lap:** existing landscape videos, a finite confetti burst, final standings, and a same-crew rematch.
+- **Play comfortably:** VoiceOver labels, scalable text, scrollable layouts, and Reduce Motion support. Reduced motion disables dice movement, score particles, confetti, and victory video playback.
 
-```
-FarkleScoreTracker/
-├── FarkleScoreTrackerApp.swift       # App entry point
-├── Models/
-│   ├── Player.swift                   # Player data model
-│   └── GameState.swift                # Game state management (@Observable)
-├── Views/
-│   ├── ContentView.swift              # Main game screen
-│   ├── ScoreInputView.swift           # Calculator-style score input
-│   ├── PlayerListView.swift           # Player management sheet
-│   └── Components/
-│       ├── PlayerRowView.swift        # Individual player display
-│       └── CalculatorButton.swift     # Reusable calculator button
-└── Assets.xcassets/                   # App icons and colors
+This is a companion to real dice, not a virtual dice game. The scoring guide preserves this app’s existing house-rule values; agree on combinations before playing.
+
+## Build
+
+Open `FarkleForge.xcodeproj` in Xcode, select an iPhone or simulator, and run. The current project targets iOS 26 and requires a compatible Xcode installation.
+
+```sh
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
+  -project FarkleForge.xcodeproj -scheme FarkleForge \
+  -destination 'generic/platform=iOS Simulator' \
+  -derivedDataPath /tmp/FarkleForge-build CODE_SIGNING_ALLOWED=NO build
 ```
 
-## Requirements
+## Scoring tests
 
-- iOS 17.0+
-- Xcode 15.0+
-- Swift 5.9+
+A lightweight Swift package runs the shared scoring model on macOS, independently of the app UI:
 
-## How to Build
+```sh
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --scratch-path /tmp/farkle-tests
+```
 
-1. Open `FarkleScoreTracker.xcodeproj` in Xcode
-2. Select your target device or simulator
-3. Press `Cmd+R` to build and run
+Tests cover bank/undo, Farkle/undo, every opponent’s final turn, undoing target crossings and winning turns, rematch reset, and invalid bank entries. Tests use in-memory players and do not modify saved player files.
 
-## Usage
+## Code map
 
-1. **Add Players**: Tap the people icon in the top right to add players
-2. **Enter Scores**: Use the calculator-style interface to enter scores
-   - Tap numbers to build your score
-   - Use +50 or +100 for quick additions
-   - Tap "Add to Score" to submit
-3. **Turn Management**: The app automatically advances to the next player after each score entry
-4. **Reset Game**: Tap the reset icon in the top left to reset all scores to 0
+- `Views/Components/ArcadeTheme.swift`: palette, type, tactile buttons, dice, finite particles.
+- `Models/ArcadeFeedback.swift`: synthesized sound and haptics.
+- `Views/StartGameView.swift`: setup.
+- `Views/ContentView.swift`: table, turn handoffs, undo, and game lifecycle.
+- `Views/ScoreInputView.swift`: score console.
+- `Views/Components/CelebrationView.swift`: victory and final standings.
+- `Models/GameState.swift`: scoring, final round, undo snapshots, and rematches.
 
-## Architecture
-
-- **SwiftUI**: Modern declarative UI framework
-- **@Observable**: iOS 17+ observation framework for state management
-- **MVVM Pattern**: Clear separation between views and business logic
-- Portrait-only orientation for focused gameplay
-
-## License
-
-This project is open source and available for personal use.
-
+Player names persist using the existing local player file. Live game recovery across app termination is not implemented. Haptic feel and sound balance should be checked on a physical iPhone before shipping.

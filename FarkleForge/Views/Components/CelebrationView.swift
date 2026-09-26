@@ -1,197 +1,75 @@
-//
-//  CelebrationView.swift
-//  FarkleScoreTracker
-//
-//  Created on 10/30/2025.
-//
-
 import SwiftUI
 import AVKit
 import AVFoundation
 
 struct CelebrationView: View {
     @Environment(GameState.self) private var gameState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let winnerName: String
     let videoURL: URL?
     let onDismiss: () -> Void
-    @State private var showBottomSheet = false
-    @State private var showScores = false
-    @State private var videoOffset: CGFloat = 0
-    @State private var maskProgress: CGFloat = 0
-
-    private var glassBackground: some View {
-        ZStack {
-            UnevenRoundedRectangle(
-                topLeadingRadius: 28,
-                bottomLeadingRadius: 0,
-                bottomTrailingRadius: 0,
-                topTrailingRadius: 28
-            )
-            .fill(.ultraThinMaterial)
-
-            UnevenRoundedRectangle(
-                topLeadingRadius: 28,
-                bottomLeadingRadius: 0,
-                bottomTrailingRadius: 0,
-                topTrailingRadius: 28
-            )
-            .fill(
-                LinearGradient(
-                    colors: [Color.white.opacity(0.18), Color.white.opacity(0.06)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-        }
-    }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            // Background image behind video
-            Image("celebrationbg")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-
-            // Fullscreen video background, shifts up when bottom sheet appears
-            // Gradient mask fades the video at the bottom, revealing the bg image beneath
-            LoopingVideoPlayer(url: videoURL)
-                .ignoresSafeArea()
-                .mask(
-                    LinearGradient(
-                        stops: [
-                            .init(color: .black, location: 0),
-                            .init(color: .black, location: 0.85),
-                            .init(color: .black.opacity(1.0 - maskProgress), location: 1.0)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .offset(y: videoOffset)
-                .animation(.spring(response: 0.5, dampingFraction: 0.8), value: videoOffset)
-
-            // Main bottom sheet
-            if showBottomSheet && !showScores {
+        ZStack {
+            ArcadeBackground(image: "celebrationbg")
+            if !reduceMotion {
+                LoopingVideoPlayer(url: videoURL)
+                    .ignoresSafeArea()
+                    .overlay(Arcade.forest.opacity(0.55))
+            }
+            ScrollView {
                 VStack(spacing: 24) {
-                    Text("\(winnerName) is the Farkle Master!")
-                        .font(.custom("Daydream", size: 28))
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
-
-                    Button(action: {
-                        videoOffset = 0
-                        onDismiss()
-                    }) {
-                        Text("Let's Farkle again")
-                            .font(.custom("Daydream", size: 20))
-                            .fontWeight(.bold)
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0))
-                            .cornerRadius(3)
+                    HStack { Spacer(); SoundButton() }
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 58)).foregroundStyle(Arcade.gold)
+                        .padding(.top, 22)
+                    VStack(spacing: 12) {
+                        Text("ALL HAIL THE").font(Arcade.display(15))
+                        Text("FARKLE\nMASTER").font(Arcade.display(30))
+                            .foregroundStyle(Arcade.mint)
+                            .multilineTextAlignment(.center)
+                        Text(winnerName).font(.system(.largeTitle, design: .rounded, weight: .heavy))
+                        Text("A little luck. A lot of bragging rights.")
+                            .font(.system(.subheadline, design: .rounded))
                     }
-                    .padding(.horizontal, 24)
-
-                    Button(action: {
-                        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                            showScores = true
-                        }
-                    }) {
-                        Text("View scores")
-                            .font(.custom("Daydream", size: 16))
-                            .foregroundColor(.white.opacity(0.7))
-                    }
-                }
-                .padding(.top, 28)
-                .padding(.bottom, 48)
-                .frame(maxWidth: .infinity)
-                .background(glassBackground)
-                .ignoresSafeArea(edges: .bottom)
-                // .opacity(0)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-
-            // Scores sheet
-            if showScores {
-                VStack(spacing: 0) {
-                    // Header
-                    HStack {
-                        Button(action: {
-                            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                                showScores = false
-                            }
-                        }) {
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.8))
-                        }
-
-                        Spacer()
-
-                        Text("Final Scores")
-                            .font(.custom("Daydream", size: 18))
-                            .foregroundColor(.white)
-
-                        Spacer()
-
-                        // Balance the chevron
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.clear)
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.top, 28)
-                    .padding(.bottom, 16)
-
-                    Divider()
-                        .background(Color.white.opacity(0.2))
-                        .padding(.horizontal, 24)
-
-                    // Player rows sorted by score descending
                     VStack(spacing: 0) {
-                        ForEach(gameState.players.sorted { $0.score > $1.score }) { player in
-                            HStack {
-                                Text(player.name)
-                                    .font(.custom("Daydream", size: 16))
-                                    .foregroundColor(player.name == winnerName ? Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0) : .white)
+                        HStack {
+                            Text("The final tally").font(.system(.headline, design: .rounded))
+                            Spacer()
+                            Image(systemName: "flag.checkered")
+                        }
+                        .padding(.bottom, 14)
+                        ForEach(Array(gameState.players.sorted { $0.score > $1.score }.enumerated()), id: \.element.id) { index, player in
+                            HStack(spacing: 12) {
+                                Text("\(index + 1)").font(Arcade.mono(14))
+                                    .foregroundStyle(Arcade.muted).frame(width: 22)
+                                Text(player.name).font(.system(.body, design: .rounded, weight: .semibold))
                                 Spacer()
-                                Text("\(player.score)")
-                                    .font(.custom("Daydream", size: 16))
-                                    .foregroundColor(player.name == winnerName ? Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0) : .white)
+                                Text(player.score.formatted()).font(Arcade.mono(20))
                             }
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 14)
-
-                            if player.id != gameState.players.sorted { $0.score > $1.score }.last?.id {
-                                Divider()
-                                    .background(Color.white.opacity(0.1))
-                                    .padding(.horizontal, 24)
-                            }
+                            .foregroundStyle(player.id == gameState.winner?.id ? Arcade.gold : Arcade.cream)
+                            .padding(.vertical, 13)
+                            .overlay(alignment: .bottom) { Rectangle().fill(.white.opacity(0.07)).frame(height: 1) }
                         }
                     }
-                    .padding(.top, 8)
-                    .padding(.bottom, 48)
+                    .padding(20)
+                    .background(Arcade.forest.opacity(0.90), in: RoundedRectangle(cornerRadius: 24))
+                    Button(action: onDismiss) {
+                        HStack {
+                            Text("One more game").font(Arcade.display(13))
+                            Spacer()
+                            Image(systemName: "arrow.clockwise").font(.headline)
+                        }
+                    }
+                    .buttonStyle(ArcadeButtonStyle())
+                    Text("Same crew. Clean slate.").font(.system(.caption, design: .rounded))
+                        .foregroundStyle(Arcade.muted)
                 }
-                .frame(maxWidth: .infinity)
-                .background(glassBackground)
-                .ignoresSafeArea(edges: .bottom)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .padding(24).frame(maxWidth: 560).frame(maxWidth: .infinity)
             }
+            VictoryConfetti()
         }
-        .ignoresSafeArea()
-        .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                    showBottomSheet = true
-                    videoOffset = -200
-                    maskProgress = 1
-                }
-            }
-        }
+        .foregroundStyle(Arcade.cream)
     }
 }
 
@@ -287,6 +165,7 @@ class LoopingVideoPlayerView: UIView {
         // Create player item
         playerItem = AVPlayerItem(url: videoUrl)
         player = AVPlayer(playerItem: playerItem)
+        player?.isMuted = true
 
         // Create player layer
         playerLayer = AVPlayerLayer(player: player)
@@ -355,9 +234,5 @@ class LoopingVideoPlayerView: UIView {
         }
         player?.pause()
     }
-}
-
-#Preview {
-    CelebrationView(winnerName: "Alice", videoURL: nil, onDismiss: {})
 }
 

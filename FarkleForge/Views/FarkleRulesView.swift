@@ -5,8 +5,8 @@
 
 import SwiftUI
 
-private let accentGreen = Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0)
-private let sheetBg = Color(red: 0.10, green: 0.16, blue: 0.09)
+private let accentGreen = Arcade.mint
+private let sheetBg = Arcade.forest
 
 struct FarkleRulesView: View {
     @Environment(\.dismiss) private var dismiss
@@ -31,6 +31,18 @@ struct FarkleRulesView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 0) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("A little risk. A lot of dice.")
+                            .font(.system(.title2, design: .rounded, weight: .bold))
+                            .foregroundStyle(Arcade.cream)
+                        Text("Roll six dice and set aside scoring dice. Keep rolling the rest, or bank your points. No scoring dice? That’s a Farkle: this turn scores zero.")
+                        Text("Score with all six? Hot dice! Roll all six again and keep building your turn. Reach the target to give everyone else one final turn.")
+                        Text("House rules vary. Agree on combinations before you roll.")
+                            .foregroundStyle(Arcade.gold)
+                    }
+                    .font(.system(.subheadline, design: .rounded))
+                    .foregroundStyle(Arcade.muted)
+                    .padding(20)
                     headerRow
                     ForEach(Array(rules.enumerated()), id: \.offset) { idx, rule in
                         RuleRowView(
@@ -52,14 +64,14 @@ struct FarkleRulesView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("Farkle Rules")
-                        .font(.custom("Daydream", size: 16))
+                    Text("Scoring guide")
+                        .font(Arcade.display(12))
                         .foregroundColor(.white)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
                         .foregroundColor(accentGreen)
-                        .font(.custom("Daydream", size: 14))
+                        .font(.system(.body, design: .rounded, weight: .bold))
                 }
             }
             .toolbarBackground(sheetBg, for: .navigationBar)
@@ -72,14 +84,14 @@ struct FarkleRulesView: View {
     private var headerRow: some View {
         HStack(spacing: 0) {
             Text("Combination")
-                .frame(width: 118, alignment: .leading)
+                .frame(width: 100, alignment: .leading)
             Spacer()
             Text("Dice")
                 .frame(maxWidth: .infinity, alignment: .center)
             Text("Score")
                 .frame(width: 50, alignment: .trailing)
         }
-        .font(.custom("IowanOldStyle-Bold", size: 11))
+        .font(.system(.caption, design: .rounded, weight: .semibold))
         .foregroundColor(.white.opacity(0.45))
         .padding(.horizontal, 16)
         .padding(.vertical, 9)
@@ -96,23 +108,23 @@ private struct RuleRowView: View {
     var body: some View {
         HStack(alignment: .center, spacing: 0) {
             Text(name)
-                .font(.custom("IowanOldStyle-Roman", size: 13))
+                .font(.system(.subheadline, design: .rounded))
                 .foregroundColor(.white)
-                .frame(width: 118, alignment: .leading)
+                .frame(width: 100, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
 
             Spacer(minLength: 6)
 
             HStack(spacing: 3) {
                 ForEach(Array(dice.enumerated()), id: \.offset) { _, face in
-                    DieView(face: face, size: 24)
+                    DieView(face: face, size: 21)
                 }
             }
 
             Spacer(minLength: 6)
 
             Text(score)
-                .font(.custom("IowanOldStyle-Bold", size: 14))
+                .font(Arcade.mono(14))
                 .foregroundColor(accentGreen)
                 .frame(width: 50, alignment: .trailing)
         }

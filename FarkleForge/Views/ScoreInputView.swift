@@ -1,157 +1,88 @@
-//
-//  ScoreInputView.swift
-//  FarkleScoreTracker
-//
-//  Created on 10/30/2025.
-//
-
 import SwiftUI
 
 struct ScoreInputView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var currentInput: String
     let onSubmit: (Int) -> Void
     let onFarkle: () -> Void
-    
-    private let farkleTint = Color(red: 255/255.0, green: 69/255.0, blue: 69/255.0) // #FF4545
-    private let accentGreen = Color(red: 163/255.0, green: 234/255.0, blue: 146/255.0) // #A3EA92
-    private let bankGreen = Color(red: 96/255.0, green: 191/255.0, blue: 72/255.0) // #60BF48 — matches active player background
-    private let bankTextColor = Color(red: 22/255.0, green: 34/255.0, blue: 19/255.0) // #162213 — matches active player text
-    
-    private let columns = [
-        GridItem(.flexible()),
-        GridItem(.flexible()),
-        GridItem(.flexible())
-    ]
-    
+    private var score: Int { Int(currentInput) ?? 0 }
+
     var body: some View {
-        VStack(spacing: 12) {
-            // Display current input
-            ZStack {
-                // Numbers centered
-                Text(currentInput.isEmpty ? "" : currentInput)
-                    .font(.custom("GeistMono-Regular", size: 34))
-                    .foregroundColor(accentGreen)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.5)
-                    .padding(.horizontal, 60) // keep clear of the reset button
-
-                // Reset button pinned to the left (only shown when there's input)
-                if !currentInput.isEmpty {
-                    HStack {
-                        Button(action: clear) {
-                            Image(systemName: "xmark")
-                                .font(.title2)
-                                .foregroundColor(.red)
-                                .padding(.horizontal, 16)
-                        }
-                        Spacer()
+        VStack(spacing: 10) {
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("This turn").font(.system(.caption, design: .rounded, weight: .medium))
+                        .foregroundStyle(Arcade.muted)
+                    Text(score.formatted())
+                        .font(Arcade.mono(38)).foregroundStyle(Arcade.cream)
+                        .contentTransition(.numericText(value: Double(score)))
+                        .animation(reduceMotion ? nil : .snappy(duration: 0.2), value: score)
+                        .lineLimit(1).minimumScaleFactor(0.5)
+                        .accessibilityLabel("This turn: \(score) points")
+                }
+                Spacer()
+                Button {
+                    if !currentInput.isEmpty { currentInput.removeLast() }
+                    ArcadeFeedback.shared.play(.tap)
+                } label: {
+                    Image(systemName: "delete.left").font(.title3)
+                        .frame(width: 48, height: 48)
+                        .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+                }
+                .accessibilityLabel("Delete last digit")
+                .disabled(currentInput.isEmpty).opacity(currentInput.isEmpty ? 0.3 : 1)
+            }
+            .padding(.horizontal, 4)
+            HStack(spacing: 8) {
+                ForEach([50, 100, 500], id: \.self) { points in
+                    Button {
+                        currentInput = String(min(score + points, 999999))
+                        ArcadeFeedback.shared.play(.tap)
+                    } label: {
+                        Text("+\(points)").font(Arcade.mono(14))
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .background(Arcade.mint.opacity(0.09), in: Capsule())
                     }
-                    .transition(.scale.combined(with: .opacity))
+                    .buttonStyle(.plain).foregroundStyle(Arcade.mint)
+                    .accessibilityLabel("Add \(points) points to this turn")
                 }
             }
-            .frame(height: 72)
-            .padding(.horizontal)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentInput.isEmpty)
-
-            // Number pad
-            LazyVGrid(columns: columns, spacing: 12) {
-                ForEach(["7", "8", "9", "4", "5", "6", "1", "2", "3"], id: \.self) { number in
-                    CalculatorButton(
-                        title: number,
-                    ) {
-                        appendNumber(number)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 9), count: 3), spacing: 9) {
+                ForEach(["7", "8", "9", "4", "5", "6", "1", "2", "3", "00", "0", "50"], id: \.self) { number in
+                    CalculatorButton(title: number, foregroundColor: number.count == 2 ? Arcade.mint : Arcade.cream) {
+                        guard currentInput.count + number.count <= 6 else { return }
+                        currentInput = String(Int(currentInput + number) ?? 0)
+                    }
+                    .accessibilityLabel(number.count == 2 ? "Append \(number)" : number)
+                }
+            }
+            HStack(spacing: 10) {
+                Button {
+                    currentInput = ""
+                    onFarkle()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "xmark").font(.subheadline.bold())
+                        Text("Farkle!").font(Arcade.display(12))
                     }
                 }
-
-                CalculatorButton(
-                    title: "00",
-                    foregroundColor: accentGreen
-                ) {
-                    appendShortcut("00")
+                .buttonStyle(ArcadeButtonStyle(fill: Arcade.coral))
+                .accessibilityHint("Score zero and pass the dice to the next player")
+                Button { onSubmit(score) } label: {
+                    HStack(spacing: 8) {
+                        Text("Bank").font(Arcade.display(12))
+                        Image(systemName: "arrow.down.to.line").font(.subheadline.bold())
+                    }
                 }
-
-                CalculatorButton(
-                    title: "0",
-                ) {
-                    appendNumber("0")
-                }
-
-                CalculatorButton(
-                    title: "50",
-                    foregroundColor: accentGreen
-                ) {
-                    appendShortcut("50")
-                }
+                .buttonStyle(ArcadeButtonStyle())
+                .disabled(score <= 0).opacity(score <= 0 ? 0.4 : 1)
+                .accessibilityHint("Save this turn’s points and pass the dice")
             }
-            .padding(.horizontal)
-
-            // Action bar: two fully rounded pill buttons on a single row
-            HStack(spacing: 12) {
-                Button(action: farkle) {
-                    Text("Farkle")
-                        .font(.custom("Daydream", size: 12))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .contentShape(Capsule())
-                }
-                .background(farkleTint, in: Capsule())
-                .buttonStyle(.plain)
-
-                Button(action: submitScore) {
-                    Text("Bank")
-                        .font(.custom("Daydream", size: 12))
-                        .foregroundStyle(bankTextColor)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .contentShape(Capsule())
-                }
-                .background(bankGreen, in: Capsule())
-                .buttonStyle(.plain)
-                .opacity(currentInput.isEmpty ? 0.4 : 1.0)
-                .disabled(currentInput.isEmpty)
-            }
-            .padding(.horizontal)
-            .padding(.top, 8)
+            .padding(.top, 5)
         }
-    }
-    
-    private func appendNumber(_ number: String) {
-        // Limit input length
-        if currentInput.count < 6 {
-            currentInput += number
-        }
-    }
-    
-    private func clear() {
-        currentInput = ""
-    }
-    
-    private func appendShortcut(_ shortcut: String) {
-        // Limit total input length
-        if currentInput.count + shortcut.count <= 6 {
-            currentInput += shortcut
-        }
-    }
-    
-    private func submitScore() {
-        if let score = Int(currentInput) {
-            onSubmit(score)
-            clear()
-        }
-    }
-    
-    private func farkle() {
-        onFarkle()
-        clear()
+        .padding(16)
+        .background(Arcade.forest.opacity(0.96), in: RoundedRectangle(cornerRadius: 28))
+        .overlay(RoundedRectangle(cornerRadius: 28).strokeBorder(Arcade.mint.opacity(0.14)))
+        .foregroundStyle(Arcade.cream)
     }
 }
-
-#Preview {
-    ScoreInputView(currentInput: .constant("")) { score in
-        print("Score submitted: \(score)")
-    } onFarkle: {
-        print("Farkle!")
-    }
-}
-
