@@ -12,10 +12,10 @@ struct ScoreInputView: View {
     let onSubmit: (Int) -> Void
     let onFarkle: () -> Void
     
-    // Dark green background color #1B2918
-    private let containerColor = Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0)
-    private let farkleColor = Color(red: 255/255.0, green: 80/255.0, blue: 80/255.0) // #FF5050
-    private let bankColor = Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0) // #60C946
+    private let farkleTint = Color(red: 255/255.0, green: 69/255.0, blue: 69/255.0) // #FF4545
+    private let accentGreen = Color(red: 163/255.0, green: 234/255.0, blue: 146/255.0) // #A3EA92
+    private let bankGreen = Color(red: 96/255.0, green: 191/255.0, blue: 72/255.0) // #60BF48 — matches active player background
+    private let bankTextColor = Color(red: 22/255.0, green: 34/255.0, blue: 19/255.0) // #162213 — matches active player text
     
     private let columns = [
         GridItem(.flexible()),
@@ -26,33 +26,33 @@ struct ScoreInputView: View {
     var body: some View {
         VStack(spacing: 12) {
             // Display current input
-            HStack {
-                // Reset button on the left (only shown when there's input)
+            ZStack {
+                // Numbers centered
+                Text(currentInput.isEmpty ? "" : currentInput)
+                    .font(.custom("GeistMono-Regular", size: 34))
+                    .foregroundColor(accentGreen)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .padding(.horizontal, 60) // keep clear of the reset button
+
+                // Reset button pinned to the left (only shown when there's input)
                 if !currentInput.isEmpty {
-                    Button(action: clear) {
-                        Image(systemName: "xmark")
-                            .font(.title2)
-                            .foregroundColor(.red)
-                            .padding(.horizontal, 16)
+                    HStack {
+                        Button(action: clear) {
+                            Image(systemName: "xmark")
+                                .font(.title2)
+                                .foregroundColor(.red)
+                                .padding(.horizontal, 16)
+                        }
+                        Spacer()
                     }
                     .transition(.scale.combined(with: .opacity))
                 }
-                
-                Spacer()
-                
-                // Numbers on the right
-                Text(currentInput.isEmpty ? "" : currentInput)
-                    .font(.custom("Daydream", size: 32))
-                    .foregroundColor(bankColor)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.5)
-                    .padding(.horizontal)
             }
             .frame(height: 72)
-            // .background(containerColor)
-            .cornerRadius(12)
+            .padding(.horizontal)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentInput.isEmpty)
-            
+
             // Number pad
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(["7", "8", "9", "4", "5", "6", "1", "2", "3"], id: \.self) { number in
@@ -62,62 +62,58 @@ struct ScoreInputView: View {
                         appendNumber(number)
                     }
                 }
-                
+
                 CalculatorButton(
                     title: "00",
-                    foregroundColor: Color(red: 163/255.0, green: 234/255.0, blue: 146/255.0) // #A3EA92
+                    foregroundColor: accentGreen
                 ) {
                     appendShortcut("00")
                 }
-                
+
                 CalculatorButton(
                     title: "0",
                 ) {
                     appendNumber("0")
                 }
-                
+
                 CalculatorButton(
                     title: "50",
-                    foregroundColor: Color(red: 163/255.0, green: 234/255.0, blue: 146/255.0) // #A3EA92
+                    foregroundColor: accentGreen
                 ) {
                     appendShortcut("50")
                 }
             }
-            
-            // Action buttons
+            .padding(.horizontal)
+
+            // Action bar: two fully rounded pill buttons on a single row
             HStack(spacing: 12) {
                 Button(action: farkle) {
                     Text("Farkle")
-                        .font(.custom("Daydream", size: 20))
+                        .font(.custom("Daydream", size: 12))
+                        .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 60)
-                        .background(containerColor)
-                        .foregroundColor(farkleColor)
-                        .cornerRadius(3)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 3)
-                            .stroke(farkleColor, lineWidth: 2)
-                        )
+                        .frame(height: 56)
+                        .contentShape(Capsule())
                 }
-                
+                .background(farkleTint, in: Capsule())
+                .buttonStyle(.plain)
+
                 Button(action: submitScore) {
                     Text("Bank")
-                        .font(.custom("Daydream", size: 20))
+                        .font(.custom("Daydream", size: 12))
+                        .foregroundStyle(bankTextColor)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 60)
-                        .background(containerColor)
-                        .foregroundColor(currentInput.isEmpty ? Color(red: 195/255.0, green: 215/255.0, blue: 190/255.0).opacity(0.30) : bankColor)
-                        .cornerRadius(3)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 3)
-                            .stroke(currentInput.isEmpty ? Color(red: 195/255.0, green: 215/255.0, blue: 190/255.0).opacity(0.30) : bankColor, lineWidth: 2)
-                        )
+                        .frame(height: 56)
+                        .contentShape(Capsule())
                 }
+                .background(bankGreen, in: Capsule())
+                .buttonStyle(.plain)
+                .opacity(currentInput.isEmpty ? 0.4 : 1.0)
                 .disabled(currentInput.isEmpty)
             }
+            .padding(.horizontal)
+            .padding(.top, 8)
         }
-        .padding()
-        // .background(containerColor)
     }
     
     private func appendNumber(_ number: String) {
