@@ -23,6 +23,16 @@
 		FA0018 /* GameSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0018A /* GameSetupView.swift */; };
 		FA0019 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0019A /* SplashView.swift */; };
 		FA0020 /* StartGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0020A /* StartGameView.swift */; };
+		FB0201 /* Synth.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0101 /* Synth.swift */; };
+		FB0202 /* SoundEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0102 /* SoundEngine.swift */; };
+		FB0203 /* Animal.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0103 /* Animal.swift */; };
+		FB0204 /* FarkleLines.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0104 /* FarkleLines.swift */; };
+		FB0205 /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0105 /* Palette.swift */; };
+		FB0206 /* PixelCrown.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0106 /* PixelCrown.swift */; };
+		FB0207 /* GameMoments.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0107 /* GameMoments.swift */; };
+		FB0208 /* PixelBuildEmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0108 /* PixelBuildEmitter.swift */; };
+		FB0209 /* AnimalBubbleField.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0109 /* AnimalBubbleField.swift */; };
+		FB0210 /* SoundLabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0110 /* SoundLabView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -44,6 +54,16 @@
 		FA0019A /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		FA0020A /* StartGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartGameView.swift; sourceTree = "<group>"; };
 		FA9999 /* FarkleForge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FarkleForge.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FB0101 /* Synth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Synth.swift; sourceTree = "<group>"; };
+		FB0102 /* SoundEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundEngine.swift; sourceTree = "<group>"; };
+		FB0103 /* Animal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Animal.swift; sourceTree = "<group>"; };
+		FB0104 /* FarkleLines.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarkleLines.swift; sourceTree = "<group>"; };
+		FB0105 /* Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
+		FB0106 /* PixelCrown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelCrown.swift; sourceTree = "<group>"; };
+		FB0107 /* GameMoments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameMoments.swift; sourceTree = "<group>"; };
+		FB0108 /* PixelBuildEmitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelBuildEmitter.swift; sourceTree = "<group>"; };
+		FB0109 /* AnimalBubbleField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimalBubbleField.swift; sourceTree = "<group>"; };
+		FB0110 /* SoundLabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundLabView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -64,6 +84,11 @@
 		FA0006 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				FB0105 /* Palette.swift */,
+				FB0106 /* PixelCrown.swift */,
+				FB0107 /* GameMoments.swift */,
+				FB0108 /* PixelBuildEmitter.swift */,
+				FB0109 /* AnimalBubbleField.swift */,
 				FA0013A /* PlayerRowView.swift */,
 				FA0014A /* CalculatorButton.swift */,
 				FA0015A /* CelebrationView.swift */,
@@ -75,6 +100,7 @@
 		FA0007 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				FB0110 /* SoundLabView.swift */,
 				67BAFBE82F954423009E28C2 /* FarkleRulesView.swift */,
 				FA0002 /* ContentView.swift */,
 				FA0011A /* ScoreInputView.swift */,
@@ -89,6 +115,8 @@
 		FA0008 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				FB0103 /* Animal.swift */,
+				FB0104 /* FarkleLines.swift */,
 				67EC512E2F74BDBE002BF1D3 /* CelebrationVideoCache.swift */,
 				FA0009 /* Player.swift */,
 				FA0010A /* GameState.swift */,
@@ -112,6 +140,7 @@
 				FA0000 /* FarkleScoreTrackerApp.swift */,
 				FA0017A /* Info.plist */,
 				FA0008 /* Models */,
+				FB0300 /* Sound */,
 				FA0007 /* Views */,
 				FA0004 /* Assets.xcassets */,
 			);
@@ -124,6 +153,15 @@
 				FA9999 /* FarkleForge.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		FB0300 /* Sound */ = {
+			isa = PBXGroup;
+			children = (
+				FB0101 /* Synth.swift */,
+				FB0102 /* SoundEngine.swift */,
+			);
+			path = Sound;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -198,6 +236,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB0201 /* Synth.swift in Sources */,
+				FB0202 /* SoundEngine.swift in Sources */,
+				FB0203 /* Animal.swift in Sources */,
+				FB0204 /* FarkleLines.swift in Sources */,
+				FB0205 /* Palette.swift in Sources */,
+				FB0206 /* PixelCrown.swift in Sources */,
+				FB0207 /* GameMoments.swift in Sources */,
+				FB0208 /* PixelBuildEmitter.swift in Sources */,
+				FB0209 /* AnimalBubbleField.swift in Sources */,
+				FB0210 /* SoundLabView.swift in Sources */,
 				FA0003 /* ContentView.swift in Sources */,
 				67BAFBE92F954423009E28C2 /* FarkleRulesView.swift in Sources */,
 				FA0001 /* FarkleScoreTrackerApp.swift in Sources */,

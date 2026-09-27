@@ -31,38 +31,82 @@ struct StartGameView: View {
         .custom("JetBrainsMono-Medium", size: 22 * width / 393)
     }
 
+    // Motion
+    @State private var hasAppeared = false
+    @State private var isLeaving = false
+    @State private var logoTaps = 0
+    @State private var logoBob = false
+    @State private var paragraphFrame: CGRect = .zero
+    @State private var startBarFrame: CGRect = .zero
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// The open space between the sentence and the Start button, where the animals float.
+    private func habitat(width: CGFloat) -> CGRect {
+        guard paragraphFrame != .zero, startBarFrame != .zero else { return .zero }
+        let top = paragraphFrame.maxY + 18
+        let bottom = startBarFrame.minY - 14
+        return CGRect(x: 0, y: top, width: width, height: max(bottom - top, 120))
+    }
+
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .top) {
                 VStack(spacing: 28) {
-                    Image("wtf")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: 260)
+                    logo
                         .padding(.top, 40)
 
                     paragraph(width: geo.size.width)
                         .padding(.horizontal)
                         .padding(.top, 24)
+                        .contentShape(Rectangle())
+                        .onTapGesture { focusedNameIndex = nil }
+                        .onGeometryChange(for: CGRect.self) { proxy in
+                            proxy.frame(in: .global)
+                        } action: { frame in
+                            paragraphFrame = frame
+                        }
 
                     Spacer(minLength: 0)
                 }
+                .opacity(isLeaving ? 0 : 1)
+                .offset(y: isLeaving ? -30 : 0)
 
                 VStack {
                     Spacer()
                     startBar
+                        .onGeometryChange(for: CGRect.self) { proxy in
+                            proxy.frame(in: .global)
+                        } action: { frame in
+                            // Ignore the keyboard pushing the button up; the
+                            // animals keep their space while names are typed.
+                            if focusedNameIndex == nil { startBarFrame = frame }
+                        }
+                        .opacity(isLeaving ? 0 : (hasAppeared ? 1 : 0))
+                        .offset(y: hasAppeared && !isLeaving ? 0 : 40)
                 }
             }
         }
+        // Background layers live outside the layout so the full-bleed image can
+        // never stretch the screen and push the Start button off the bottom.
         .background {
-            Image("startBg")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            focusedNameIndex = nil
+            ZStack {
+                Color.clear
+                    .overlay {
+                        Image("startBg")
+                            .resizable()
+                            .scaledToFill()
+                    }
+                    .clipped()
+
+                GeometryReader { geo in
+                    AnimalBubbleField(
+                        habitat: habitat(width: geo.size.width),
+                        isLeaving: isLeaving,
+                        onTouch: { focusedNameIndex = nil }
+                    )
+                }
+            }
+            .ignoresSafeArea()
         }
         .sheet(isPresented: $showingScoreSheet) {
             scoreSheet
@@ -73,6 +117,69 @@ struct StartGameView: View {
         .onChange(of: focusedNameIndex) { oldValue, newValue in
             handleFocusChange(from: oldValue, to: newValue)
         }
+        .onAppear {
+            withAnimation(.spring(response: 0.7, dampingFraction: 0.75).delay(0.35)) {
+                hasAppeared = true
+            }
+            #if DEBUG
+            // `-demo start` taps Start by itself, for recording the handoff.
+            if UserDefaults.standard.string(forKey: "demo") == "start" {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { startGame() }
+            }
+            // `-players 4` sets the player count, for screenshots.
+            let players = UserDefaults.standard.integer(forKey: "players")
+            if (2...8).contains(players) { playerCount = players }
+            #endif
+            if !reduceMotion {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                    withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
+                        logoBob = true
+                    }
+                }
+            }
+        }
+    }
+
+    /// Drops in on arrival, bobs gently, and has something to say when poked.
+    private var logo: some View {
+        Image("wtf")
+            .resizable()
+            .scaledToFit()
+            .frame(maxWidth: 260)
+            .offset(y: logoBob ? -4 : 3)
+            .keyframeAnimator(initialValue: LogoPoke(), trigger: logoTaps) { content, value in
+                content
+                    .scaleEffect(x: value.scaleX, y: value.scaleY, anchor: .bottom)
+                    .rotationEffect(.degrees(value.angle))
+            } keyframes: { _ in
+                KeyframeTrack(\.scaleX) {
+                    SpringKeyframe(1.12, duration: 0.1)
+                    SpringKeyframe(0.96, duration: 0.14)
+                    SpringKeyframe(1.0, duration: 0.3)
+                }
+                KeyframeTrack(\.scaleY) {
+                    SpringKeyframe(0.86, duration: 0.1)
+                    SpringKeyframe(1.06, duration: 0.14)
+                    SpringKeyframe(1.0, duration: 0.3)
+                }
+                KeyframeTrack(\.angle) {
+                    LinearKeyframe(-3, duration: 0.1)
+                    LinearKeyframe(2, duration: 0.12)
+                    SpringKeyframe(0, duration: 0.3)
+                }
+            }
+            .scaleEffect(hasAppeared ? 1 : 0.6)
+            .offset(y: hasAppeared ? 0 : -24)
+            .opacity(hasAppeared ? 1 : 0)
+            .animation(.spring(response: 0.6, dampingFraction: 0.55), value: hasAppeared)
+            .onTapGesture {
+                focusedNameIndex = nil
+                logoTaps += 1
+                SoundEngine.shared.play(.logo)
+                Haptics.rigid()
+            }
+            .accessibilityLabel("What The Farkle")
+            .accessibilityAddTraits(.isImage)
     }
 
     private func handleFocusChange(from oldValue: Int?, to newValue: Int?) {
@@ -100,16 +207,20 @@ struct StartGameView: View {
                 Text("I want to play to")
                 tappable(text: scoreString) { showingScoreSheet = true }
             }
+            .modifier(EntranceLine(isVisible: hasAppeared, index: 0))
             HStack(spacing: 8) {
                 Text("with")
                 tappable(text: "\(playerCount) players") { showingPlayerCountSheet = true }
             }
+            .modifier(EntranceLine(isVisible: hasAppeared, index: 1))
             FlowLayout(spacing: 6, lineSpacing: 8) {
                 Text("named")
                 ForEach(0..<playerCount, id: \.self) { i in
                     namedUnit(at: i)
+                        .transition(.scale(scale: 0.5).combined(with: .opacity))
                 }
             }
+            .modifier(EntranceLine(isVisible: hasAppeared, index: 2))
         }
         .font(bodyFont(width: width))
         .foregroundStyle(.white)
@@ -146,7 +257,12 @@ struct StartGameView: View {
     }
 
     private func tappable(text: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        Button {
+            focusedNameIndex = nil
+            SoundEngine.shared.play(.tick)
+            Haptics.tap()
+            action()
+        } label: {
             Text(text)
                 .foregroundStyle(Self.accentGreen)
                 .underline()
@@ -154,7 +270,7 @@ struct StartGameView: View {
                 .padding(.vertical, 2)
                 .background(Color.black.opacity(0.4), in: RoundedRectangle(cornerRadius: 4))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(SquishButtonStyle(scale: 0.9))
     }
 
     private func binding(for index: Int) -> Binding<String> {
@@ -207,11 +323,11 @@ struct StartGameView: View {
                 .contentShape(Capsule())
         }
         .background(Self.startGreen, in: Capsule())
-        .buttonStyle(.plain)
+        .buttonStyle(SquishButtonStyle())
         .opacity(canStart ? 1.0 : 0.4)
         .disabled(!canStart)
         .padding(.horizontal)
-        .padding(.bottom, 8)
+        .padding(.bottom, 16)
     }
 
     private var canStart: Bool {
@@ -221,12 +337,23 @@ struct StartGameView: View {
     }
 
     private func startGame() {
+        guard !isLeaving else { return }
         focusedNameIndex = nil
-        gameState.targetScore = localTargetScore
-        for i in 0..<playerCount {
-            let trimmed = names[i].trimmingCharacters(in: .whitespaces)
-            if !trimmed.isEmpty {
-                gameState.addPlayer(name: trimmed)
+        SoundEngine.shared.play(.start)
+        Haptics.soft()
+        // Everyone floats off, then the game builds in behind them.
+        withAnimation(.easeIn(duration: 0.3)) {
+            isLeaving = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + (reduceMotion ? 0.1 : 0.45)) {
+            gameState.targetScore = localTargetScore
+            withAnimation(.easeInOut(duration: 0.35)) {
+                for i in 0..<playerCount {
+                    let trimmed = names[i].trimmingCharacters(in: .whitespaces)
+                    if !trimmed.isEmpty {
+                        gameState.addPlayer(name: trimmed)
+                    }
+                }
             }
         }
     }
@@ -235,6 +362,8 @@ struct StartGameView: View {
         VStack(spacing: 12) {
             ForEach([10000, 5000, 2500], id: \.self) { score in
                 Button {
+                    SoundEngine.shared.play(.select)
+                    Haptics.tap()
                     localTargetScore = score
                     showingScoreSheet = false
                 } label: {
@@ -246,7 +375,7 @@ struct StartGameView: View {
                         .background(localTargetScore == score ? Self.accentGreen : Color.white.opacity(0.06))
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(SquishButtonStyle())
             }
             Spacer(minLength: 0)
         }
@@ -262,7 +391,11 @@ struct StartGameView: View {
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(2...8, id: \.self) { count in
                     Button {
-                        playerCount = count
+                        SoundEngine.shared.play(.select)
+                        Haptics.tap()
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                            playerCount = count
+                        }
                         showingPlayerCountSheet = false
                     } label: {
                         Text("\(count)")
@@ -273,7 +406,7 @@ struct StartGameView: View {
                             .background(playerCount == count ? Self.accentGreen : Color.white.opacity(0.06))
                             .clipShape(RoundedRectangle(cornerRadius: 6))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(SquishButtonStyle())
                 }
             }
             .padding(.horizontal)
@@ -282,6 +415,25 @@ struct StartGameView: View {
         .padding(.top, 24)
         .presentationDetents([.fraction(0.35)])
         .presentationBackground(Self.backgroundColor)
+    }
+}
+
+private struct LogoPoke {
+    var scaleX: CGFloat = 1
+    var scaleY: CGFloat = 1
+    var angle: Double = 0
+}
+
+/// Each line of the sentence rises in just after the one above it.
+private struct EntranceLine: ViewModifier {
+    let isVisible: Bool
+    let index: Int
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(isVisible ? 1 : 0)
+            .offset(y: isVisible ? 0 : 14)
+            .animation(.spring(response: 0.55, dampingFraction: 0.8).delay(0.15 + Double(index) * 0.09), value: isVisible)
     }
 }
 
