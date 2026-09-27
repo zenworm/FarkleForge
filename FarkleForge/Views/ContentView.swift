@@ -22,6 +22,9 @@ struct ContentView: View {
     /// The game's chrome (rows, keypad, header) steps aside so the celebration can
     /// build the animal directly over the live background.
     @State private var isCelebrating = false
+    /// Set the moment the game is decided: the winner's row takes the spotlight
+    /// for a beat before the celebration.
+    @State private var announcedWinner: UUID? = nil
     @State private var gameVideoURL: URL? = nil
     @State private var gameImageName: String? = nil
     @State private var isBanking = false
@@ -84,9 +87,22 @@ struct ContentView: View {
                             Text("This will remove all players and reset the game. Are you sure?")
                         }
                         .onChange(of: gameState.winner) { _, newValue in
-                            guard newValue != nil else { return }
-                            // Let the winning bar finish its sweep before the fog clears.
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+                            guard let winner = newValue else {
+                                // The winning entry was undone: back to the game.
+                                withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                                    announcedWinner = nil
+                                    updateCrown()
+                                }
+                                return
+                            }
+                            // 1. Let any winning bar finish its sweep, then make it
+                            //    unmistakable who won...
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                                guard gameState.winner != nil else { return }
+                                announceWinner(winner)
+                            }
+                            // 2. ...and after a beat, clear the stage for the animal.
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.3) {
                                 guard gameState.winner != nil else { return }
                                 // Clear the stage, leaving only the fog...
                                 withAnimation(.easeOut(duration: 0.3)) {
@@ -106,6 +122,7 @@ struct ContentView: View {
                         .fullScreenCover(isPresented: $showingCelebration, onDismiss: {
                             gameState.resetScores()
                             crownHolder = nil
+                            announcedWinner = nil
                             farkleStreaks = [:]
                             // The next game's background builds in, then the chrome returns.
                             isCelebrating = false
@@ -129,6 +146,7 @@ struct ContentView: View {
                 isIntroRevealed = false
                 showContent = false
                 crownHolder = nil
+                announcedWinner = nil
                 farkleStreaks = [:]
                 // Clear the background so the next game deals a fresh one from the
                 // shuffle bag; ContentView's @State persists across the reset, so
@@ -159,17 +177,20 @@ struct ContentView: View {
                             ForEach(Array(gameState.players.enumerated()), id: \.element.id) { index, player in
                                 PlayerRowView(
                                     player: player,
-                                    isCurrentTurn: player.id == gameState.currentPlayer?.id,
+                                    isCurrentTurn: announcedWinner.map { $0 == player.id } ?? (player.id == gameState.currentPlayer?.id),
                                     isFinalRound: gameState.isFinalRound,
                                     leaderScore: gameState.leaderScore,
                                     targetScore: gameState.targetScore,
                                     isFirst: index == 0,
                                     isLast: index == gameState.players.count - 1,
                                     hasCrown: player.id == crownHolder,
-                                    crownNamespace: crownNamespace
+                                    crownNamespace: crownNamespace,
+                                    isWinner: player.id == announcedWinner
                                 ) { frame in
                                     self.geometry.scoreFrames[player.id] = frame
                                 }
+                                // Everyone else steps back while the winner is announced
+                                .opacity(announcedWinner == nil || announcedWinner == player.id ? 1 : 0.35)
                                 .id(player.id)
                             }
                         }
@@ -192,6 +213,12 @@ struct ContentView: View {
                                 .frame(height: 32)
                         }
                         .ignoresSafeArea(edges: .top)
+                    }
+                }
+                .onChange(of: announcedWinner) { _, winner in
+                    guard let winner else { return }
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                        proxy.scrollTo(winner, anchor: .center)
                     }
                 }
                 .onChange(of: gameState.currentTurnIndex) { oldValue, newValue in
@@ -230,6 +257,10 @@ struct ContentView: View {
                 onDisplayFrame: { geometry.displayFrame = $0 }
             )
             .opacity(showContent ? 1 : 0)
+            // The game is decided; no more scoring (undo still works)
+            .allowsHitTesting(announcedWinner == nil)
+            .opacity(announcedWinner == nil ? 1 : 0.5)
+            .animation(.easeOut(duration: 0.3), value: announcedWinner)
         }
         .opacity(isCelebrating ? 0 : 1)
         .farkleShake(trigger: farkleCount, enabled: !reduceMotion)
@@ -359,6 +390,18 @@ struct ContentView: View {
         }
     }
 
+    #if DEBUG
+    fileprivate func demoType(_ text: String) {
+        for (index, character) in text.enumerated() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.12) {
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.6)) {
+                    currentInput.append(character)
+                }
+            }
+        }
+    }
+    #endif
+
     // MARK: - Farkles
 
     fileprivate func farkle() {
@@ -371,7 +414,7 @@ struct ContentView: View {
         farkleCount += 1
         SoundEngine.shared.playFarkle()
         Haptics.farkle()
-        showSticker(style: .farkle, title: streak > 1 ? "Farkle ×\(streak)" : "Farkle!", message: line)
+        showSticker(style: .farkle, title: streak > 1 ? "Farkle x\(streak)" : "Farkle!", message: line)
 
         withAnimation(.easeIn(duration: 0.18)) {
             currentInput = ""
@@ -393,6 +436,17 @@ struct ContentView: View {
             farkleStreaks[id] = max(0, (farkleStreaks[id] ?? 0) - 1)
         }
         currentInput = ""
+    }
+
+    private func announceWinner(_ winner: Player) {
+        SoundEngine.shared.play(.winner)
+        Haptics.success()
+        currentInput = ""
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) {
+            announcedWinner = winner.id
+            crownHolder = winner.id
+        }
+        showSticker(style: .winner, title: "Winner!", message: "\(winner.name) takes the crown")
     }
 
     private func showSticker(style: GameSticker.Style, title: String, message: String) {
@@ -553,9 +607,14 @@ private enum DemoScript {
             after(3.2) { view.farkle() }
         case "bank":
             after(2.0) { view.bank(1500) }
+        case "typed":
+            after(1.8) { view.demoType("1500") }
+        case "streak":
+            // Three players: the fourth farkle is the first player's second in a row.
+            for i in 0..<4 { after(2.0 + Double(i) * 0.6) { view.farkle() } }
         case "final":
             after(2.0) { view.bank(4000) }
-        case "win":
+        case "win", "winscores":
             after(2.0) { view.bank(4000) }
             after(3.6) { view.bank(9000) }
             after(5.2) { view.farkle() }

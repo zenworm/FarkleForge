@@ -10,7 +10,7 @@
 import SwiftUI
 
 struct GameSticker: Equatable, Identifiable {
-    enum Style { case farkle, finalRound }
+    enum Style { case farkle, finalRound, winner }
 
     let id = UUID()
     let style: Style
@@ -35,7 +35,7 @@ struct StickerView: View {
     var body: some View {
         VStack(spacing: 8) {
             HStack(spacing: 8) {
-                if sticker.style == .finalRound {
+                if sticker.style != .farkle {
                     PixelCrown(pixel: 2, tint: Palette.ink)
                 }
                 Text(sticker.title)

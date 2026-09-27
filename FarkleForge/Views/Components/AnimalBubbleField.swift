@@ -106,7 +106,12 @@ private final class BubbleSimulation {
     private var now = Date()
     private var nextChatter = Date().addingTimeInterval(6)
     private var lastBump = Date.distantPast
+    #if DEBUG
+    private var didDemoSpeak = false
+    #endif
     private var fieldSize: CGSize = .zero
+    /// Top of the open space; speech bubbles never rise above it into the sentence.
+    private var habitatTop: CGFloat = 0
 
     private static let speechDuration: TimeInterval = 1.9
 
@@ -146,6 +151,7 @@ private final class BubbleSimulation {
         // Wait for layout to report where the open space is before anyone appears.
         guard !rawHabitat.isEmpty, size.width > 0 else { return }
         let habitat = rawHabitat.insetBy(dx: 12, dy: 0)
+        habitatTop = habitat.minY
         if bubbles.isEmpty { populate(in: habitat) }
 
         // Shrink everyone a little if the habitat gets cramped (lots of players
@@ -277,9 +283,21 @@ private final class BubbleSimulation {
     /// Every so often, when nobody's playing with them, an animal pipes up on its
     /// own. Silently: the start screen shouldn't make noise unless you touch it.
     private func chatter() {
+        #if DEBUG
+        // `-demo speak`: an animal pipes up on cue, for screenshots.
+        if !didDemoSpeak, UserDefaults.standard.string(forKey: "demo") == "speak" {
+            didDemoSpeak = true
+            nextChatter = now.addingTimeInterval(3)
+        }
+        #endif
         guard !isTouching, now >= nextChatter, !bubbles.isEmpty else { return }
         nextChatter = now.addingTimeInterval(.random(in: 6...10))
-        let candidates = bubbles.indices.filter { bubbles[$0].speech == nil }
+        var candidates = bubbles.indices.filter { bubbles[$0].speech == nil }
+        #if DEBUG
+        if UserDefaults.standard.string(forKey: "demo") == "speak" {
+            candidates = candidates.filter { if case .animal = bubbles[$0].kind { return true } else { return false } }
+        }
+        #endif
         guard let index = candidates.randomElement() else { return }
         speak(index, withSound: false)
     }
@@ -446,8 +464,8 @@ private final class BubbleSimulation {
         let padding = CGSize(width: 12, height: 8)
         let pill = CGSize(width: textSize.width + padding.width * 2, height: textSize.height + padding.height * 2)
 
-        // Above the bubble unless that would run off the top; then below.
-        let above = b.position.y - b.radius - pill.height - 12 > 60
+        // Above the bubble unless that would reach into the sentence; then below.
+        let above = b.position.y - b.radius - pill.height - 14 > habitatTop
         let anchor = CGPoint(x: b.position.x, y: above ? b.position.y - b.radius - 6 : b.position.y + b.radius + 6)
         var centerX = anchor.x
         centerX = min(max(centerX, pill.width / 2 + 10), fieldSize.width - pill.width / 2 - 10)

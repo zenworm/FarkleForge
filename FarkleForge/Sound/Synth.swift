@@ -27,6 +27,8 @@ enum SoundEffect: Hashable {
     case fill(from: Double, to: Double)
     case crown
     case finalRound
+    /// "Ta-DA!" the moment the game is decided, before the fanfare.
+    case winner
     case farkle(Int)
     case voice(AnimalVoice)
     case bubbleGrab
@@ -87,6 +89,7 @@ enum Synth {
         case .fill(let from, let to): return fill(from: from, to: to)
         case .crown: return crown()
         case .finalRound: return finalRound()
+        case .winner: return winner()
         case .farkle(let variant): return farkle(variant)
         case .voice(let voice): return self.voice(voice)
         case .bubbleGrab: return bubbleGrab()
@@ -240,6 +243,26 @@ enum Synth {
                       gain: gain, filter: .lowpass(3000))
         }
         return track.finish(peak: 0.36)
+    }
+
+    private static func winner() -> [Float] {
+        var track = Track(duration: 0.9)
+        // Ta: a short pickup chord. DA: an octave higher, held, with a bell on top.
+        for midi in [67.0, 71.0, 74.0] {
+            let f = hz(midi)
+            track.add(at: 0, length: 0.1, wave: .pulse(0.5), pitch: { _ in f },
+                      envelope: .init(attack: 0.003, release: 0.02), gain: 0.7, filter: .lowpass(3000))
+        }
+        for midi in [72.0, 76.0, 79.0, 84.0] {
+            let f = hz(midi)
+            track.add(at: 0.13, length: 0.7, wave: .pulse(0.5),
+                      pitch: { t in f * vibrato(t, rate: 6, depth: 0.01, delay: 0.15) },
+                      envelope: .init(attack: 0.004, decay: 0.45, release: 0.15),
+                      gain: midi == 84 ? 1 : 0.6, filter: .lowpass(3200))
+        }
+        track.add(at: 0.13, length: 0.6, wave: .sine, pitch: { _ in hz(96) },
+                  envelope: .init(attack: 0.002, decay: 0.2, release: 0.1), gain: 0.3)
+        return track.finish(peak: 0.42)
     }
 
     // MARK: - Farkles (the comedy department)

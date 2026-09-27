@@ -126,6 +126,9 @@ struct StartGameView: View {
             if UserDefaults.standard.string(forKey: "demo") == "start" {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { startGame() }
             }
+            // `-players 4` sets the player count, for screenshots.
+            let players = UserDefaults.standard.integer(forKey: "players")
+            if (2...8).contains(players) { playerCount = players }
             #endif
             if !reduceMotion {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {

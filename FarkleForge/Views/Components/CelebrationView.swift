@@ -244,6 +244,13 @@ struct CelebrationView: View {
                     titleProgress = 1
                 }
             }
+            #if DEBUG
+            if UserDefaults.standard.string(forKey: "demo") == "winscores" {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) { showScores = true }
+                }
+            }
+            #endif
         }
     }
 }

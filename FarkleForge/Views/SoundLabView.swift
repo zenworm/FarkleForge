@@ -15,7 +15,7 @@ struct SoundLabView: View {
             + [("00", .keyPair("00")), ("50", .keyPair("50")), ("Clear", .clear), ("Nope", .nope)]),
         ("Scoring", [("Coin", .coin), ("Small bank", .fill(from: 0.2, to: 0.25)),
                      ("Big bank", .fill(from: 0.3, to: 0.65)), ("Crown", .crown),
-                     ("Final round", .finalRound), ("Undo", .undo)]),
+                     ("Final round", .finalRound), ("Winner", .winner), ("Undo", .undo)]),
         ("Farkles", [("Sad trombone", .farkle(0)), ("Slide whistle", .farkle(1)), ("Boing", .farkle(2)),
                      ("Raspberry", .farkle(3)), ("Game over", .farkle(4))]),
         ("Animals", [("Frog", .voice(.croak)), ("Fox", .voice(.yip)), ("Otter", .voice(.squeak)),

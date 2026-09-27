@@ -42,7 +42,7 @@ final class SoundEngine {
             configureIfNeeded()
             var effects: [SoundEffect] = (0...9).map { .key($0) }
             effects += [.keyPair("00"), .keyPair("50"), .clear, .nope, .undo, .coin, .crown,
-                        .finalRound, .bubbleGrab, .bubbleBump, .tick, .select, .start,
+                        .finalRound, .winner, .bubbleGrab, .bubbleBump, .tick, .select, .start,
                         .fanfare, .confetti, .logo]
             effects += (0..<SoundEffect.farkleVariantCount).map { .farkle($0) }
             effects += AnimalVoice.allCases.map { .voice($0) }

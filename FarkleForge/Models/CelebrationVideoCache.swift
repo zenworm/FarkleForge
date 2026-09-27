@@ -66,6 +66,14 @@ class CelebrationVideoCache {
         let valid = snapshot.filter { FileManager.default.fileExists(atPath: $0.path) }
         guard !valid.isEmpty else { return (nil, nil) }
 
+        #if DEBUG
+        // `-animal 004` deals a specific animal, for screenshots.
+        if let forced = UserDefaults.standard.string(forKey: "animal"),
+           let match = valid.first(where: { $0.lastPathComponent.hasPrefix("\(assetPrefix)\(forced)") }) {
+            return (match, match.deletingPathExtension().lastPathComponent + "_bg")
+        }
+        #endif
+
         // Drop any staged picks whose assets have gone away since the bag was dealt.
         let validPaths = Set(valid.map { $0.path })
         shuffleBag.removeAll { !validPaths.contains($0.path) }

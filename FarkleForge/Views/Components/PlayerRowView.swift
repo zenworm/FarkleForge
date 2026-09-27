@@ -18,13 +18,15 @@ struct PlayerRowView: View {
     /// The leader wears the crown. It hops between rows via matched geometry.
     let hasCrown: Bool
     let crownNamespace: Namespace.ID?
+    /// The game is decided and this player won: bigger crown, gold glow.
+    var isWinner: Bool = false
     /// Reports where the score sits (in the "game" coordinate space) so a banked
     /// number knows where to fly.
     var onScoreFrame: (CGRect) -> Void = { _ in }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(player: Player, isCurrentTurn: Bool, isFinalRound: Bool, leaderScore: Int, targetScore: Int, isFirst: Bool, isLast: Bool, hasCrown: Bool = false, crownNamespace: Namespace.ID? = nil, onScoreFrame: @escaping (CGRect) -> Void = { _ in }) {
+    init(player: Player, isCurrentTurn: Bool, isFinalRound: Bool, leaderScore: Int, targetScore: Int, isFirst: Bool, isLast: Bool, hasCrown: Bool = false, crownNamespace: Namespace.ID? = nil, isWinner: Bool = false, onScoreFrame: @escaping (CGRect) -> Void = { _ in }) {
         self.player = player
         self.isCurrentTurn = isCurrentTurn
         self.isFinalRound = isFinalRound
@@ -34,11 +36,12 @@ struct PlayerRowView: View {
         self.isLast = isLast
         self.hasCrown = hasCrown
         self.crownNamespace = crownNamespace
+        self.isWinner = isWinner
         self.onScoreFrame = onScoreFrame
     }
     
     var pointsNeeded: Int? {
-        guard isFinalRound, player.score < leaderScore else { return nil }
+        guard isFinalRound, !isWinner, player.score < leaderScore else { return nil }
         return leaderScore - player.score + 1
     }
     
@@ -166,14 +169,33 @@ struct PlayerRowView: View {
                 SpringKeyframe(1.0, duration: 0.4, spring: .bouncy)
             }
         }
+        // The winner glows gold while the result sinks in
+        .overlay {
+            Rectangle()
+                .strokeBorder(Palette.gold, lineWidth: 2)
+                .opacity(isWinner ? 1 : 0)
+        }
+        .shadow(color: Palette.gold.opacity(isWinner ? 0.65 : 0), radius: 22)
+        .animation(.easeOut(duration: 0.35), value: isWinner)
         .accessibilityElement(children: .combine)
-        .accessibilityValue(hasCrown ? "Leader" : "")
+        .accessibilityValue(isWinner ? "Winner" : (hasCrown ? "Leader" : ""))
     }
 
     @ViewBuilder
     private var crown: some View {
         let crown = PixelCrown(pixel: 2)
-            .shadow(color: Palette.gold.opacity(isCurrentTurn ? 0 : 0.6), radius: 4)
+            .shadow(color: Palette.gold.opacity(isCurrentTurn && !isWinner ? 0 : 0.6), radius: 4)
+            // Winner: the crown swells, then keeps a slow, proud bounce
+            .keyframeAnimator(initialValue: 1.0, trigger: isWinner) { [isWinner] content, scale in
+                content.scaleEffect(isWinner ? scale : 1, anchor: .bottom)
+            } keyframes: { _ in
+                KeyframeTrack {
+                    SpringKeyframe(1.9, duration: 0.25, spring: .bouncy)
+                    SpringKeyframe(1.5, duration: 0.3)
+                    SpringKeyframe(1.7, duration: 0.3)
+                    SpringKeyframe(1.5, duration: 0.3)
+                }
+            }
             .transition(.scale(scale: 0.2).combined(with: .opacity))
         if let crownNamespace {
             crown.matchedGeometryEffect(id: "crown", in: crownNamespace)
