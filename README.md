@@ -31,6 +31,8 @@ copy carry the personality.
 
 In Debug builds the menu has a **Sound lab** for auditioning every sound, and
 launch arguments drive the game for recording: `-demo start|bank|farkle|final|win`.
+`-demo onboarding` taps through the how-to-play pages by itself, and `-onboardingPage 2`
+opens them on a given page.
 
 ## Adding an Animal
 
@@ -53,6 +55,7 @@ FarkleScoreTracker/
 │   ├── Synth.swift                    # Every sound, synthesized from code
 │   └── SoundEngine.swift              # Playback pool + haptics
 ├── Views/
+│   ├── OnboardingView.swift           # First-launch how to play, told by the animals
 │   ├── StartGameView.swift            # Setup sentence + floating animal bubbles
 │   ├── ContentView.swift              # Main game screen and its big moments
 │   ├── ScoreInputView.swift           # Calculator-style score input

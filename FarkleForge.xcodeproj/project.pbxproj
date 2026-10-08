@@ -33,6 +33,7 @@
 		FB0208 /* PixelBuildEmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0108 /* PixelBuildEmitter.swift */; };
 		FB0209 /* AnimalBubbleField.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0109 /* AnimalBubbleField.swift */; };
 		FB0210 /* SoundLabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0110 /* SoundLabView.swift */; };
+		FB0211 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0111 /* OnboardingView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -64,6 +65,7 @@
 		FB0108 /* PixelBuildEmitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelBuildEmitter.swift; sourceTree = "<group>"; };
 		FB0109 /* AnimalBubbleField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimalBubbleField.swift; sourceTree = "<group>"; };
 		FB0110 /* SoundLabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundLabView.swift; sourceTree = "<group>"; };
+		FB0111 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -101,6 +103,7 @@
 			isa = PBXGroup;
 			children = (
 				FB0110 /* SoundLabView.swift */,
+				FB0111 /* OnboardingView.swift */,
 				67BAFBE82F954423009E28C2 /* FarkleRulesView.swift */,
 				FA0002 /* ContentView.swift */,
 				FA0011A /* ScoreInputView.swift */,
@@ -246,6 +249,7 @@
 				FB0208 /* PixelBuildEmitter.swift in Sources */,
 				FB0209 /* AnimalBubbleField.swift in Sources */,
 				FB0210 /* SoundLabView.swift in Sources */,
+				FB0211 /* OnboardingView.swift in Sources */,
 				FA0003 /* ContentView.swift in Sources */,
 				67BAFBE92F954423009E28C2 /* FarkleRulesView.swift in Sources */,
 				FA0001 /* FarkleScoreTrackerApp.swift in Sources */,

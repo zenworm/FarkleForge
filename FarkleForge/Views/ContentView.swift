@@ -12,12 +12,14 @@ struct ContentView: View {
     @Environment(\.videoCache) private var videoCache
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(SoundEngine.enabledKey) private var soundEnabled = true
+    @AppStorage(OnboardingView.seenKey) private var hasSeenOnboarding = false
     @Namespace private var crownNamespace
 
     @State private var currentInput = ""
     @State private var showingPlayerList = false
     @State private var showingResetAlert = false
     @State private var showingRulesSheet = false
+    @State private var showingHowToPlay = false
     @State private var showingCelebration = false
     /// The game's chrome (rows, keypad, header) steps aside so the celebration can
     /// build the animal directly over the live background.
@@ -51,7 +53,14 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if gameState.players.isEmpty {
+            if !hasSeenOnboarding && gameState.players.isEmpty {
+                OnboardingView {
+                    withAnimation(.easeInOut(duration: 0.35)) {
+                        hasSeenOnboarding = true
+                    }
+                }
+                .transition(.opacity)
+            } else if gameState.players.isEmpty {
                 StartGameView()
                     .transition(.opacity)
             } else {
@@ -69,6 +78,9 @@ struct ContentView: View {
                         }
                         .sheet(isPresented: $showingRulesSheet) {
                             FarkleRulesView()
+                        }
+                        .fullScreenCover(isPresented: $showingHowToPlay) {
+                            OnboardingView { showingHowToPlay = false }
                         }
                         #if DEBUG
                         .sheet(isPresented: $showingSoundLab) {
@@ -139,6 +151,10 @@ struct ContentView: View {
                 }
                 .transition(.opacity)
             }
+        }
+        .onAppear {
+            // Someone with a game already in progress knows how to play.
+            if !gameState.players.isEmpty { hasSeenOnboarding = true }
         }
         .onChange(of: gameState.players.isEmpty) { _, isEmpty in
             if isEmpty {
@@ -514,6 +530,9 @@ struct ContentView: View {
                     Button(role: .destructive, action: { showingResetAlert = true }) {
                         Label("New game", systemImage: "arrow.counterclockwise")
                     }
+                }
+                Button(action: { showingHowToPlay = true }) {
+                    Label("How to play", systemImage: "questionmark.circle")
                 }
                 Button(action: { showingRulesSheet = true }) {
                     Label("Farkle rules", systemImage: "book")

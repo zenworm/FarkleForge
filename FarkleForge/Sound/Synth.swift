@@ -39,6 +39,8 @@ enum SoundEffect: Hashable {
     case fanfare
     case confetti
     case logo
+    /// Dice rattling across the table, for the how-to-play examples.
+    case diceRoll
 
     static let farkleVariantCount = 5
 }
@@ -100,6 +102,7 @@ enum Synth {
         case .fanfare: return fanfare()
         case .confetti: return confetti()
         case .logo: return logo()
+        case .diceRoll: return diceRoll()
         }
     }
 
@@ -542,6 +545,26 @@ enum Synth {
                   pitch: { t in hz(63) * vibrato(t, rate: 6, depth: 0.015, delay: 0.15) },
                   envelope: .init(attack: 0.004, decay: 0.5, release: 0.12), filter: .lowpass(2400))
         return track.finish(peak: 0.36)
+    }
+
+    /// A cluster of little knocks that thins out as the dice settle. Each knock is a
+    /// click of filtered noise over a short wooden "tok".
+    private static func diceRoll() -> [Float] {
+        var track = Track(duration: 0.5)
+        let knocks: [(time: Double, pitch: Double, gain: Double)] = [
+            (0, 1300, 1), (0.035, 1650, 0.7), (0.07, 1150, 0.9), (0.1, 1500, 0.6),
+            (0.15, 1250, 0.7), (0.21, 1600, 0.5), (0.28, 1350, 0.4), (0.37, 1450, 0.25),
+        ]
+        for knock in knocks {
+            track.add(at: knock.time, length: 0.03, wave: .noise, pitch: { _ in 0 },
+                      envelope: .init(attack: 0.0005, decay: 0.006, release: 0.01),
+                      gain: knock.gain * 0.7, filter: .bandpass(knock.pitch * 2.5, q: 2))
+            track.add(at: knock.time, length: 0.05, wave: .triangle,
+                      pitch: { t in knock.pitch * (1 - 0.15 * t / 0.05) },
+                      envelope: .init(attack: 0.001, decay: 0.01, release: 0.01),
+                      gain: knock.gain * 0.45)
+        }
+        return track.finish(peak: 0.24)
     }
 }
 

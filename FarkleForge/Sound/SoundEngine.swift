@@ -43,7 +43,7 @@ final class SoundEngine {
             var effects: [SoundEffect] = (0...9).map { .key($0) }
             effects += [.keyPair("00"), .keyPair("50"), .clear, .nope, .undo, .coin, .crown,
                         .finalRound, .winner, .bubbleGrab, .bubbleBump, .tick, .select, .start,
-                        .fanfare, .confetti, .logo]
+                        .fanfare, .confetti, .logo, .diceRoll]
             effects += (0..<SoundEffect.farkleVariantCount).map { .farkle($0) }
             effects += AnimalVoice.allCases.map { .voice($0) }
             for effect in effects where cache[effect] == nil {

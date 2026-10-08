@@ -22,7 +22,7 @@ struct SoundLabView: View {
                      ("Raccoon", .voice(.chitter)), ("Panther", .voice(.purr)), ("Mystery", .voice(.mystery))]),
         ("Start & finish", [("Tick", .tick), ("Select", .select), ("Bubble grab", .bubbleGrab),
                             ("Bubble bump", .bubbleBump), ("Start", .start), ("Logo", .logo),
-                            ("Fanfare", .fanfare), ("Confetti", .confetti)]),
+                            ("Fanfare", .fanfare), ("Confetti", .confetti), ("Dice roll", .diceRoll)]),
     ]
 
     var body: some View {
