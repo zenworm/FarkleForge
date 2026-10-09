@@ -19,8 +19,15 @@ struct OnboardingView: View {
     @State private var page: Int? = 0
     @State private var hasAppeared = false
     @State private var isLeaving = false
-    /// The first page arrives in silence; sound starts once the player touches something.
-    @State private var hasInteracted = false
+    /// Sound waits for a touch. Opened from the menu, that touch has already happened.
+    @State private var hasInteracted: Bool
+
+    /// `startsQuiet` is for first launch: the first page arrives in silence, like the
+    /// start screen, and sound starts once the player touches something.
+    init(startsQuiet: Bool = false, onFinish: @escaping () -> Void) {
+        self.onFinish = onFinish
+        _hasInteracted = State(initialValue: !startsQuiet)
+    }
 
     private let steps = OnboardingStep.all
 

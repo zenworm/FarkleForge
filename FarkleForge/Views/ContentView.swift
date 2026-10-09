@@ -54,7 +54,7 @@ struct ContentView: View {
     var body: some View {
         Group {
             if !hasSeenOnboarding && gameState.players.isEmpty {
-                OnboardingView {
+                OnboardingView(startsQuiet: true) {
                     withAnimation(.easeInOut(duration: 0.35)) {
                         hasSeenOnboarding = true
                     }
