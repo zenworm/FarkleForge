@@ -535,7 +535,7 @@ struct ContentView: View {
                     Label("How to play", systemImage: "questionmark.circle")
                 }
                 Button(action: { showingRulesSheet = true }) {
-                    Label("Farkle rules", systemImage: "book")
+                    Label("Cheat sheet", systemImage: "book")
                 }
                 Toggle(isOn: $soundEnabled) {
                     Label("Sound", systemImage: soundEnabled ? "speaker.wave.2" : "speaker.slash")
