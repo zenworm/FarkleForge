@@ -238,11 +238,11 @@ private struct OnboardingStep: Identifiable {
                 animal: animal("panther"),
                 line: "I only play to win.",
                 title: "The big run",
-                detail: Text("Roll \(lit("1 through 6")) in a single roll for \(lit("2,000"))."),
+                detail: Text("Roll \(lit("1 through 6")) in a single roll for \(lit("2,500"))."),
                 aside: Text("Bank your points. First to the target takes the crown."),
                 rolls: [
                     // Kept in face order, so the plinks climb the scale as they line up.
-                    DemoRoll(faces: [3, 6, 1, 5, 2, 4], keep: [2, 4, 0, 5, 3, 1], points: 2000, linesUp: true),
+                    DemoRoll(faces: [3, 6, 1, 5, 2, 4], keep: [2, 4, 0, 5, 3, 1], points: 2500, linesUp: true),
                 ]
             ),
         ]
