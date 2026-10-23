@@ -23,12 +23,13 @@ struct ScoreInputView: View {
     private let accentGreen = Palette.accent
     private let bankGreen = Palette.leaf // matches active player background
     private let bankTextColor = Palette.ink // matches active player text
+    private let shortcutTint = Color.black.opacity(0.25) // sets 00 and 50 apart from the digits
     private let maxLength = 6
 
     private let columns = [
-        GridItem(.flexible()),
-        GridItem(.flexible()),
-        GridItem(.flexible())
+        GridItem(.flexible(), spacing: 8),
+        GridItem(.flexible(), spacing: 8),
+        GridItem(.flexible(), spacing: 8)
     ]
 
     var body: some View {
@@ -42,7 +43,7 @@ struct ScoreInputView: View {
                             .transition(.digit)
                     }
                 }
-                .font(.custom("GeistMono-Regular", size: 34))
+                .font(.custom("Jersey10-Regular", size: 48))
                 .foregroundColor(accentGreen)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
@@ -87,7 +88,7 @@ struct ScoreInputView: View {
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentInput.isEmpty)
 
             // Number pad
-            LazyVGrid(columns: columns, spacing: 12) {
+            LazyVGrid(columns: columns, spacing: 8) {
                 ForEach(["7", "8", "9", "4", "5", "6", "1", "2", "3"], id: \.self) { number in
                     CalculatorButton(title: number, sound: .key(Int(number)!)) {
                         appendNumber(number)
@@ -97,6 +98,7 @@ struct ScoreInputView: View {
                 CalculatorButton(
                     title: "00",
                     foregroundColor: accentGreen,
+                    tint: shortcutTint,
                     sound: .keyPair("00")
                 ) {
                     appendShortcut("00")
@@ -109,6 +111,7 @@ struct ScoreInputView: View {
                 CalculatorButton(
                     title: "50",
                     foregroundColor: accentGreen,
+                    tint: shortcutTint,
                     sound: .keyPair("50")
                 ) {
                     appendShortcut("50")

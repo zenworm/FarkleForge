@@ -14,6 +14,7 @@ struct ContentView: View {
     @AppStorage(SoundEngine.enabledKey) private var soundEnabled = true
     @AppStorage(OnboardingView.seenKey) private var hasSeenOnboarding = false
     @Namespace private var crownNamespace
+    @Namespace private var cursorNamespace
 
     @State private var currentInput = ""
     @State private var showingPlayerList = false
@@ -201,6 +202,7 @@ struct ContentView: View {
                                     isLast: index == gameState.players.count - 1,
                                     hasCrown: player.id == crownHolder,
                                     crownNamespace: crownNamespace,
+                                    cursorNamespace: cursorNamespace,
                                     isWinner: player.id == announcedWinner
                                 ) { frame in
                                     self.geometry.scoreFrames[player.id] = frame
@@ -587,7 +589,7 @@ private struct ScoreFlightView: View {
 
     var body: some View {
         Text(flight.text)
-            .font(.custom("GeistMono-Regular", size: 34))
+            .font(.custom("Jersey10-Regular", size: 48))
             .foregroundColor(Palette.accent)
             .shadow(color: Palette.accent.opacity(0.6), radius: flight.arrivedY ? 10 : 0)
             .scaleEffect(flight.arrivedY ? 0.6 : 1)

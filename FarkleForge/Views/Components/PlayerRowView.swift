@@ -18,6 +18,8 @@ struct PlayerRowView: View {
     /// The leader wears the crown. It hops between rows via matched geometry.
     let hasCrown: Bool
     let crownNamespace: Namespace.ID?
+    /// The cursor points at whose turn it is, hopping between rows the same way.
+    let cursorNamespace: Namespace.ID?
     /// The game is decided and this player won: bigger crown, gold glow.
     var isWinner: Bool = false
     /// Reports where the score sits (in the "game" coordinate space) so a banked
@@ -26,7 +28,7 @@ struct PlayerRowView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(player: Player, isCurrentTurn: Bool, isFinalRound: Bool, leaderScore: Int, targetScore: Int, isFirst: Bool, isLast: Bool, hasCrown: Bool = false, crownNamespace: Namespace.ID? = nil, isWinner: Bool = false, onScoreFrame: @escaping (CGRect) -> Void = { _ in }) {
+    init(player: Player, isCurrentTurn: Bool, isFinalRound: Bool, leaderScore: Int, targetScore: Int, isFirst: Bool, isLast: Bool, hasCrown: Bool = false, crownNamespace: Namespace.ID? = nil, cursorNamespace: Namespace.ID? = nil, isWinner: Bool = false, onScoreFrame: @escaping (CGRect) -> Void = { _ in }) {
         self.player = player
         self.isCurrentTurn = isCurrentTurn
         self.isFinalRound = isFinalRound
@@ -36,6 +38,7 @@ struct PlayerRowView: View {
         self.isLast = isLast
         self.hasCrown = hasCrown
         self.crownNamespace = crownNamespace
+        self.cursorNamespace = cursorNamespace
         self.isWinner = isWinner
         self.onScoreFrame = onScoreFrame
     }
@@ -51,32 +54,25 @@ struct PlayerRowView: View {
     
     var progressBarColor: Color {
         if isCurrentTurn {
-            return Color(red: 185/255.0, green: 239/255.0, blue: 168/255.0) // #B9EFA8
+            return Palette.fern // #4BA834
         } else {
-            return Color(red: 145/255.0, green: 218/255.0, blue: 127/255.0).opacity(0.6) // #91DA7F at 60%
+            return Palette.fern.opacity(0.6) // #4BA834 at 60%
         }
     }
 
-    private var nameColor: Color {
-        if isCurrentTurn {
-            return Color(red: 22/255.0, green: 34/255.0, blue: 19/255.0) // #162213
-        } else {
-            return Color.white.opacity(0.8) // #FFFFFF at 80%
-        }
+    /// Every bar ends in a bright edge, except an empty one: a score of 0 has no bar.
+    private var showsBarEdge: Bool {
+        player.score > 0
     }
 
-    private var scoreColor: Color {
-        if isCurrentTurn {
-            return Color(red: 27/255.0, green: 41/255.0, blue: 24/255.0) // #1B2918
-        } else {
-            return Color(red: 145/255.0, green: 218/255.0, blue: 127/255.0) // #91DA7F
-        }
-    }
-    
+    // Light text on every row; the bars and the row fill mark whose turn it is.
+    private let nameColor = Color.white.opacity(0.8) // #FFFFFF at 80%
+    private let scoreColor = Palette.sprout // #B9EFA8
+
     /// Background fill for the active player. Tweak the `.opacity(...)` value
     /// here to adjust just the fill — the row's container/size is unaffected.
     private var activeBackgroundColor: Color {
-        Color(red: 96/255.0, green: 191/255.0, blue: 72/255.0).opacity(0.5) // #60BF48
+        Palette.pine.opacity(0.4) // #165B05 at 40%
     }
 
     /// Scales a base font size to the device width so text reads consistently across
@@ -88,8 +84,9 @@ struct PlayerRowView: View {
         return min(max(scaled, base * 0.85), base * 1.4) // floor / ceiling
     }
 
-    private var nameFontSize: CGFloat { scaledFontSize(base: 21) }  // tweak base for name size
-    private var scoreFontSize: CGFloat { scaledFontSize(base: 21) } // tweak base for score size
+    // The current player's row is bigger than everyone else's.
+    private var nameFontSize: CGFloat { scaledFontSize(base: isCurrentTurn ? 38 : 26) }  // tweak base for name size
+    private var scoreFontSize: CGFloat { scaledFontSize(base: isCurrentTurn ? 38 : 26) } // tweak base for score size
 
     private var cornerRadius: CGFloat = 0
     
@@ -107,7 +104,7 @@ struct PlayerRowView: View {
             // Background container
             shape
                 .fill(isCurrentTurn ? activeBackgroundColor : Color.clear)
-            
+
             // Progress bar (full bleed on left, top, bottom)
             GeometryReader { geometry in
                 shape
@@ -115,27 +112,37 @@ struct PlayerRowView: View {
                     .frame(width: geometry.size.width * progress)
                     .frame(maxHeight: .infinity, alignment: .leading)
                     .overlay(alignment: .trailing) {
+                        Rectangle()
+                            .fill(Palette.lime)
+                            .frame(width: 2)
+                            .opacity(showsBarEdge ? 1 : 0)
+                    }
+                    .overlay(alignment: .trailing) {
                         ProgressTipGlow(progress: progress, isActive: isCurrentTurn)
                     }
                     .animation(.easeOut(duration: 0.6), value: progress)
             }
-            
+
             // Content
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 10) {
+                    if isCurrentTurn {
+                        cursor
+                    }
+
                     if hasCrown {
                         crown
                     }
 
                     Text(player.name)
-                        .font(.custom("JetBrainsMono-Medium", size: nameFontSize))
+                        .modifier(AnimatableFont(name: "Jersey10-Regular", size: nameFontSize))
                         .foregroundColor(nameColor)
 
                     Spacer()
 
                     // Rolls up digit by digit, in step with the bar
-                    Text(player.score, format: .number)
-                        .font(.custom("GeistMono-Bold", size: scoreFontSize))
+                    Text(player.score, format: .number.grouping(.never))
+                        .modifier(AnimatableFont(name: "Jersey10-Regular", size: scoreFontSize))
                         .foregroundColor(scoreColor)
                         .contentTransition(.numericText(value: Double(player.score)))
                         .animation(.easeOut(duration: 0.6), value: player.score)
@@ -148,26 +155,18 @@ struct PlayerRowView: View {
 
                 if let pointsNeeded = pointsNeeded, isCurrentTurn {
                     Text("\(pointsNeeded) to win")
-                        .font(.custom("JetBrainsMono-Regular", size: 12))
+                        .font(.custom("Jersey10-Regular", size: 18))
                         .foregroundColor(nameColor)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                 }
             }
-            .padding()
+            .padding(.horizontal, 16)
+            .padding(.vertical, isCurrentTurn ? 16 : 10)
         }
         .clipShape(shape)
         .overlay {
             ProgressBuildEmitter(progress: progress, isActive: isCurrentTurn)
                 .allowsHitTesting(false)
-        }
-        // A small hop when it becomes this player's turn
-        .keyframeAnimator(initialValue: 1.0, trigger: isCurrentTurn) { [hops = isCurrentTurn && !reduceMotion] content, scale in
-            content.scaleEffect(hops ? scale : 1)
-        } keyframes: { _ in
-            KeyframeTrack {
-                SpringKeyframe(1.035, duration: 0.14)
-                SpringKeyframe(1.0, duration: 0.4, spring: .bouncy)
-            }
         }
         // The winner glows gold while the result sinks in
         .overlay {
@@ -179,6 +178,24 @@ struct PlayerRowView: View {
         .animation(.easeOut(duration: 0.35), value: isWinner)
         .accessibilityElement(children: .combine)
         .accessibilityValue(isWinner ? "Winner" : (hasCrown ? "Leader" : ""))
+        .accessibilityAddTraits(isCurrentTurn ? .isSelected : [])
+    }
+
+    @ViewBuilder
+    private var cursor: some View {
+        let cursor = PixelCursor(pixel: 3)
+            // Nudges toward the name and back, like a menu cursor waiting on you
+            .phaseAnimator(reduceMotion ? [0.0] : [0.0, 3.0]) { content, x in
+                content.offset(x: x)
+            } animation: { _ in
+                .easeInOut(duration: 0.2).delay(0.3)
+            }
+            .transition(.opacity)
+        if let cursorNamespace {
+            cursor.matchedGeometryEffect(id: "cursor", in: cursorNamespace)
+        } else {
+            cursor
+        }
     }
 
     @ViewBuilder
@@ -202,6 +219,50 @@ struct PlayerRowView: View {
         } else {
             crown
         }
+    }
+}
+
+/// A pixel arrow, like the cursor in an old game menu.
+private struct PixelCursor: View {
+    /// Size of one "pixel" in points; the arrow is 4 × 7 pixels.
+    var pixel: CGFloat = 3
+
+    private static let map = [
+        "x...",
+        "xx..",
+        "xxx.",
+        "xxxx",
+        "xxx.",
+        "xx..",
+        "x...",
+    ]
+
+    var body: some View {
+        Canvas { context, _ in
+            for (y, row) in Self.map.enumerated() {
+                for (x, cell) in row.enumerated() where cell == "x" {
+                    let rect = CGRect(x: CGFloat(x) * pixel, y: CGFloat(y) * pixel, width: pixel, height: pixel)
+                    context.fill(Path(rect), with: .color(Palette.lime))
+                }
+            }
+        }
+        .frame(width: 4 * pixel, height: 7 * pixel)
+        .accessibilityHidden(true)
+    }
+}
+
+/// A custom font whose size animates. Changing `.font` directly jumps between sizes.
+private struct AnimatableFont: ViewModifier, Animatable {
+    let name: String
+    var size: CGFloat
+
+    var animatableData: CGFloat {
+        get { size }
+        set { size = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        content.font(.custom(name, size: size))
     }
 }
 

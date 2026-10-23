@@ -14,6 +14,10 @@ enum Palette {
     static let sprout = Color(red: 185/255.0, green: 239/255.0, blue: 168/255.0)     // #B9EFA8
     static let moss = Color(red: 145/255.0, green: 218/255.0, blue: 127/255.0)       // #91DA7F
     static let mist = Color(red: 233/255.0, green: 255/255.0, blue: 224/255.0)       // #E9FFE0
+    static let fern = Color(red: 75/255.0, green: 168/255.0, blue: 52/255.0)         // #4BA834 progress bars
+    static let pine = Color(red: 22/255.0, green: 91/255.0, blue: 5/255.0)           // #165B05 active row
+    static let lime = Color(red: 162/255.0, green: 242/255.0, blue: 142/255.0)       // #A2F28E bar edges
+    static let clover = Color(red: 96/255.0, green: 201/255.0, blue: 70/255.0)       // #60C946 key borders
     static let farkle = Color(red: 255/255.0, green: 69/255.0, blue: 69/255.0)       // #FF4545
     static let gold = Color(red: 255/255.0, green: 200/255.0, blue: 61/255.0)        // crown
     static let goldShadow = Color(red: 214/255.0, green: 132/255.0, blue: 28/255.0)

@@ -10,6 +10,7 @@ import SwiftUI
 struct CalculatorButton: View {
     let title: String
     let foregroundColor: Color
+    let tint: Color
     let sound: SoundEffect
     let action: () -> Void
 
@@ -20,24 +21,28 @@ struct CalculatorButton: View {
     init(
         title: String,
         foregroundColor: Color = .white, // #FFFFFF default
+        tint: Color = .clear,
         sound: SoundEffect,
         action: @escaping () -> Void
     ) {
         self.title = title
         self.foregroundColor = foregroundColor
+        self.tint = tint
         self.sound = sound
         self.action = action
     }
 
+    private let shape = RoundedRectangle(cornerRadius: 4)
+
     var body: some View {
         Text(title)
-            .font(.custom("GeistMono-Regular", size: 34))
+            .font(.custom("Jersey10-Regular", size: 48))
             .foregroundColor(isPressed ? Palette.accent : foregroundColor)
             .scaleEffect(isPressed ? 0.86 : 1)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background {
-                // Pill flash: snaps on at touch-down, then melts away.
-                Capsule()
+                // Key flash: snaps on at touch-down, then melts away.
+                shape
                     .fill(Palette.accent)
                     .keyframeAnimator(initialValue: 0.0, trigger: pressCount) { content, opacity in
                         content.opacity(opacity)
@@ -49,8 +54,15 @@ struct CalculatorButton: View {
                         }
                     }
             }
+            .background(tint, in: shape)
+            .overlay {
+                // A hairline key with a hard little shadow off its bottom-right edge
+                shape
+                    .strokeBorder(Palette.clover, lineWidth: 1)
+                    .shadow(color: .black.opacity(0.35), radius: 0, x: 1.5, y: 2)
+            }
             .contentShape(Rectangle())
-            .frame(height: 60)
+            .frame(height: 64)
             // Fire on touch-down rather than release: score entry is fast, often
             // two-thumbed, and the sound should land the instant a finger does.
             .gesture(
